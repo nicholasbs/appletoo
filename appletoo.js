@@ -1,6 +1,6 @@
 var AppleToo = {};
 
-var program = "A0 02 A2 02 A9 02".replace(/\s+/g, "");
+var program = "A2 00 BC 00 02".replace(/\s+/g, "");
 
 var opcode,
     program_counter = 0,
@@ -18,6 +18,20 @@ var OPCODES = {
   "A4" : function ldy_zp() {
     var addr = get_args(1)[0];
     YR = read_memory(addr);
+  },
+  "B4" : function ldy_zpx() {
+	var offset = get_args(1)[0],
+		addr = offset + XR;
+	YR = read_memory(addr);
+  },
+  "AC" : function ldy_a() {
+	var addr = get_args(2).join('');
+	YR = read_memory(addr);
+  },
+  "BC" : function ldy_ax() {
+	var offset = get_args(2).join(''),
+		addr = XR + offset;
+	YR = read_memory(addr);
   },
   "A2" : function ldx_i() {
     XR = get_args(1)[0];
@@ -40,7 +54,7 @@ initialize_memory();
 write_memory("02", "0F");
 
 while (program_counter < program.length) {
-  opcode = get_opcode();  
+  opcode = get_opcode();
   run(opcode);
 }
 

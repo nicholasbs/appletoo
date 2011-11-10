@@ -1,12 +1,12 @@
 var appleToo,
-	setupTeardown = {
-	  setup: function() {
-		appleToo = new AppleToo();
-	  },
-	  teardown: function() {
-		appleToo = undefined;
-	  }
-	};
+    setupTeardown = {
+      setup: function() {
+        appleToo = new AppleToo();
+      },
+      teardown: function() {
+        appleToo = undefined;
+      }
+    };
 
 module("Helper functions", setupTeardown);
 test("get_register", function() {
@@ -22,32 +22,32 @@ test("set_register", function() {
 
 module("Load and Store", setupTeardown);
 test("LDY_I", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.run6502("A0 0F");
-	equal(appleToo.get_register("YR"), "0F", "Argument should be loaded into Register Y");
-	equal(appleToo.cycles, 2, "Should take 2 cycles");
+  appleToo.run6502("A0 0F");
+  equal(appleToo.get_register("YR"), "0F", "Argument should be loaded into Register Y");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
 });
 
 test("LDY_ZP", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.write_memory("0F", "AA");
+  appleToo.write_memory("0F", "AA");
 
-	appleToo.run6502("A4 0F");
-	equal(appleToo.get_register("YR"), "AA", "Value from Zero Page Memory should be loaded into Register Y");
-	equal(appleToo.cycles, 3, "Should take 3 cycles");
+  appleToo.run6502("A4 0F");
+  equal(appleToo.get_register("YR"), "AA", "Value from Zero Page Memory should be loaded into Register Y");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
 });
 
 test("LDY_ZPX", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.set_register("XR", "01");
-	appleToo.write_memory("03", "0F");
+  appleToo.set_register("XR", "01");
+  appleToo.write_memory("03", "0F");
 
-	appleToo.run6502("B4 02");
-	equal(appleToo.get_register("YR"), "0F", "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Register Y");
-	equal(appleToo.cycles, 4, "Should take 4 cycles");
+  appleToo.run6502("B4 02");
+  equal(appleToo.get_register("YR"), "0F", "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Register Y");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
 });
 
 test("LDY_A", function() {
@@ -78,24 +78,24 @@ test("LDX_I", function() {
 });
 
 test("LDX_ZP", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.write_memory("0F", "AA");
+  appleToo.write_memory("0F", "AA");
 
-	appleToo.run6502("A6 0F");
-	equal(appleToo.get_register("XR"), "AA", "Value from Zero Page Memory should be loaded into Register X");
-	equal(appleToo.cycles, 3, "Should take 3 cycles");
+  appleToo.run6502("A6 0F");
+  equal(appleToo.get_register("XR"), "AA", "Value from Zero Page Memory should be loaded into Register X");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
 });
 
 test("LDX_ZPY", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.set_register("YR", "01");
-	appleToo.write_memory("03", "0F");
+  appleToo.set_register("YR", "01");
+  appleToo.write_memory("03", "0F");
 
-	appleToo.run6502("B6 02");
-	equal(appleToo.get_register("XR"), "0F", "Value at Memory location (Zero Page Arg + value in Register Y) should be loaded into Register X");
-	equal(appleToo.cycles, 4, "Should take 4 cycles");
+  appleToo.run6502("B6 02");
+  equal(appleToo.get_register("XR"), "0F", "Value at Memory location (Zero Page Arg + value in Register Y) should be loaded into Register X");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
 });
 
 test("LDX_A", function() {
@@ -126,24 +126,24 @@ test("LDA_I", function() {
 });
 
 test("LDA_ZP", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.write_memory("0F", "AA");
+  appleToo.write_memory("0F", "AA");
 
-	appleToo.run6502("A5 0F");
-	equal(appleToo.get_register("AC"), "AA", "Value from Zero Page Memory should be loaded into Accumulator");
-	equal(appleToo.cycles, 3, "Should take 3 cycles");
+  appleToo.run6502("A5 0F");
+  equal(appleToo.get_register("AC"), "AA", "Value from Zero Page Memory should be loaded into Accumulator");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
 });
 
 test("LDA_ZPX", function() {
-	expect(2);
+  expect(2);
 
-	appleToo.set_register("XR", "01");
-	appleToo.write_memory("03", "0F");
+  appleToo.set_register("XR", "01");
+  appleToo.write_memory("03", "0F");
 
-	appleToo.run6502("B5 02");
-	equal(appleToo.get_register("AC"), "0F", "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Accumulator");
-	equal(appleToo.cycles, 4, "Should take 4 cycles");
+  appleToo.run6502("B5 02");
+  equal(appleToo.get_register("AC"), "0F", "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Accumulator");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
 });
 
 test("LDA_A", function() {

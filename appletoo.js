@@ -1,29 +1,29 @@
 var AppleToo = function() {
   // Memory is stored as numbers
   // See: http://jsperf.com/tostring-16-vs-parseint-x-16
-	this.memory = [];
-	this.AC; // Registers
-	this.XR;
-	this.YR;
-	this.SR;
-	this.SP;
-	this.PC = 0;
+  this.memory = [];
+  this.AC; // Registers
+  this.XR;
+  this.YR;
+  this.SR;
+  this.SP;
+  this.PC = 0;
 
-	this.cycles = 0;
+  this.cycles = 0;
 
-	this.initialize_memory();
+  this.initialize_memory();
 };
 
 AppleToo.prototype.run6502 = function(program) {
-	var opcode;
+  var opcode;
 
-	this.program = program.replace(/\s+/g, "");
-	while (this.PC < this.program.length) {
-	  opcode = this.get_opcode();
-	  this.run(opcode);
-	}
+  this.program = program.replace(/\s+/g, "");
+  while (this.PC < this.program.length) {
+    opcode = this.get_opcode();
+    this.run(opcode);
+  }
 
-	this.print_registers();
+  this.print_registers();
 };
 
 AppleToo.prototype.run = function(opcode) {
@@ -85,48 +85,48 @@ AppleToo.prototype.set_register = function(register, val) {
 }
 
 AppleToo.prototype.ldy_i = function() {
-    this.YR = this.get_arg();
-	this.cycles += 2;
+  this.YR = this.get_arg();
+  this.cycles += 2;
 };
 AppleToo.prototype.ldy_zp = function() {
-    var addr = this.get_arg();
-    this.YR = this.read_memory(addr);
-	this.cycles += 3;
+  var addr = this.get_arg();
+  this.YR = this.read_memory(addr);
+  this.cycles += 3;
 }
 AppleToo.prototype.ldy_zpx = function() {
-	var offset = this.get_arg(),
-		  addr = offset + this.XR;
-	this.YR = this.read_memory(addr);
-	this.cycles += 4;
+  var offset = this.get_arg(),
+      addr = offset + this.XR;
+  this.YR = this.read_memory(addr);
+  this.cycles += 4;
 };
 AppleToo.prototype.ldy_a = function() {
-	var addr = this.get_arg(2);
-	this.YR = this.read_memory(addr);
-	this.cycles += 4;
+  var addr = this.get_arg(2);
+  this.YR = this.read_memory(addr);
+  this.cycles += 4;
 };
 AppleToo.prototype.ldy_ax = function() {
-	var offset = this.get_arg(2),
-		  addr = this.XR + offset;
-	this.YR = this.read_memory(addr);
-	this.cycles += 4;
+  var offset = this.get_arg(2),
+      addr = this.XR + offset;
+  this.YR = this.read_memory(addr);
+  this.cycles += 4;
 };
 AppleToo.prototype.ldx_i = function() {
   this.XR = this.get_arg();
-	this.cycles += 2;
+  this.cycles += 2;
 };
 AppleToo.prototype.ldx_zp = function() {
   var addr = this.get_arg();
   this.XR = this.read_memory(addr);
-	this.cycles += 3;
+  this.cycles += 3;
 };
 AppleToo.prototype.lda_i = function() {
-    this.AC = this.get_arg();
-    this.cycles += 2;
+  this.AC = this.get_arg();
+  this.cycles += 2;
 };
 AppleToo.prototype.lda_zp = function() {
-    var addr = this.get_arg();
-    this.AC = this.read_memory(addr);
-    this.cycles += 3;
+  var addr = this.get_arg();
+  this.AC = this.read_memory(addr);
+  this.cycles += 3;
 };
 
 var OPCODES = {

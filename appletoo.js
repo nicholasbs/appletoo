@@ -1,4 +1,6 @@
 var AppleToo = function() {
+  // Memory is stored as numbers
+  // See: http://jsperf.com/tostring-16-vs-parseint-x-16
 	this.memory = [];
 	this.AC; // Registers
 	this.XR;
@@ -40,14 +42,15 @@ AppleToo.prototype.print_registers = function() {
 };
 
 AppleToo.prototype.initialize_memory = function() {
-  console.log("Init memory run");
-  for (var i=0; i<8192; i++) {
+  for (var i=0; i<1024; i++) {
     this.memory[i] = 0;
   }
 };
 
-AppleToo.prototype.read_memory = function(hex_loc) {
-  var loc = parseInt(hex_loc, 16);
+AppleToo.prototype.read_memory = function(loc) {
+  if (typeof loc === "string") {
+    loc = parseInt(loc, 16);
+  }
   return this.memory[loc].toString(16);
 };
 
@@ -66,53 +69,64 @@ AppleToo.prototype.get_opcode = function() {
   return opcode;
 };
 
-AppleToo.prototype.get_args = function(n) {
-  var arg_str = this.program.substr(this.PC, n*2);
-  this.PC += n*2;
-  var args = [];
-  for (var i=0; i<arg_str.length; i+=2) {
-    args.push(arg_str.substr(i, 2));
-  }
-  return args;
+AppleToo.prototype.get_arg = function(bytes) {
+  bytes = bytes || 1;
+  var arg = this.program.substr(this.PC, bytes*2);
+  this.PC += bytes*2;
+  return parseInt(arg, 16)
 };
 
+AppleToo.prototype.get_register = function(register) {
+  return zero_pad(this[register]);
+}
+
+AppleToo.prototype.set_register = function(register, val) {
+  return this[register] = parseInt(val, 16);
+}
+
 AppleToo.prototype.ldy_i = function() {
-    this.YR = this.get_args(1)[0];
+    this.YR = this.get_arg();
 	this.cycles += 2;
 };
 AppleToo.prototype.ldy_zp = function() {
-    var addr = this.get_args(1)[0];
+    var addr = this.get_arg();
     this.YR = this.read_memory(addr);
 	this.cycles += 3;
-};
+}
 AppleToo.prototype.ldy_zpx = function() {
-	var offset = this.get_args(1)[0],
-		addr = offset + this.XR;
+	var offset = this.get_arg(),
+		  addr = offset + this.XR;
 	this.YR = this.read_memory(addr);
 	this.cycles += 4;
 };
 AppleToo.prototype.ldy_a = function() {
-	var addr = this.get_args(2).join('');
+	var addr = this.get_arg(2);
 	this.YR = this.read_memory(addr);
+	this.cycles += 4;
 };
 AppleToo.prototype.ldy_ax = function() {
-	var offset = this.get_args(2).join(''),
-		addr = this.XR + offset;
+	var offset = this.get_arg(2),
+		  addr = this.XR + offset;
 	this.YR = this.read_memory(addr);
+	this.cycles += 4;
 };
 AppleToo.prototype.ldx_i = function() {
-    this.XR = this.get_args(1)[0];
+  this.XR = this.get_arg();
+	this.cycles += 2;
 };
 AppleToo.prototype.ldx_zp = function() {
-    var addr = this.get_args(1)[0];
-    this.XR = this.read_memory(addr);
+  var addr = this.get_arg();
+  this.XR = this.read_memory(addr);
+	this.cycles += 3;
 };
 AppleToo.prototype.lda_i = function() {
-    this.AC = this.get_args(1)[0];
+    this.AC = this.get_arg();
+    this.cycles += 2;
 };
 AppleToo.prototype.lda_zp = function() {
-    var addr = this.get_args(1)[0];
+    var addr = this.get_arg();
     this.AC = this.read_memory(addr);
+    this.cycles += 3;
 };
 
 var OPCODES = {
@@ -125,4 +139,15 @@ var OPCODES = {
   "A6" : "ldx_zp",
   "A9" : "lda_i",
   "A5" : "lda_zp"
+}
+
+// Utilities
+function zero_pad(n, len, base) {
+  len = len || 2;
+  base = base || 16;
+  var result = n.toString(base).toUpperCase();
+  while (result.length < len) {
+    result = "0" + result;
+  }
+  return result;
 }

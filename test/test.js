@@ -19,6 +19,15 @@ test("set_register", function() {
   appleToo.set_register("XR", "01");
   equal(appleToo.XR, 1);
 });
+test("get_status_flags", function() {
+  expect(1);
+  deepEqual(appleToo.get_status_flags(), {N:0, V:0, _:0, B:0, D:0, I:0, Z:0, C:0});
+});
+test("set_status_flags", function() {
+  expect(1);
+  appleToo.set_status_flags({N:1, V:0, _:0, B:0, D:0, I:0, Z:1, C:0});
+  equal(appleToo.SR, 130);
+});
 
 module("Load and Store", setupTeardown);
 test("LDY_I", function() {
@@ -218,3 +227,129 @@ test("STA_AX", function() {
   equal(appleToo.cycles, 5, "Should take 5 cycles");
 });
 
+test("STA_AY", function() {
+  expected(2);
+
+  appleToo.set_register("AC", "AA");
+  appleToo.set_register("YR", "02");
+  appleToo.run6502("99 13 35");
+  equal(appleToo.read_memory("1337"), "AA", "Store Accumlator at given absolute address + value in Register Y");
+  equal(appleToo.cycles, 5, "Should take 5 cycles");
+});
+
+test("STA_ZP", function() {
+  expected(2);
+
+  appleToo.set_register("AC", "AA");
+  appleToo.run6502("85 01");
+
+  equal(appleToo.read_memory("01"), "AA", "Store Accumlator at Zero Page Memory Location");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
+});
+
+test("STA_ZPX", function() {
+  expected(2);
+
+  appleToo.set_register("AC", "AA");
+  appleToo.set_register("XR", "01");
+  appleToo.run6502("95 01");
+
+  equal(appleToo.read_memory("02"), "AA", "Store Accumlator at (Zero Page Memory Location + value in Register X");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
+});
+
+test("STA_IDX", function() {
+  expect(2);
+
+  appleToo.set_register("AC", "BB");
+  appleToo.set_register("XR", "02");
+
+  appleToo.write_memory("17", "10");
+  appleToo.write_memory("18", "D0");
+  appleToo.write_memory("D010", "AF");
+  appleToo.run6502("81 15");
+
+  equal(appleToo.read_memory("AF"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with X");
+  equal(appleToo.cycles, 6, "Should take 6 cycles");
+});
+
+test("STA_IDY", function() {
+  expect(2);
+
+  appleToo.set_register("AC", "BB");
+  appleToo.set_register("YR", "02");
+
+  appleToo.write_memory("17", "10");
+  appleToo.write_memory("18", "D0");
+  appleToo.write_memory("D010", "AF");
+  appleToo.run6502("91 15");
+
+  equal(appleToo.read_memory("AF"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with Y");
+  equal(appleToo.cycles, 6, "Should take 6 cycles");
+});
+
+test("STX_ZP", function() {
+  expected(2);
+
+  appleToo.set_register("XR", "AA");
+  appleToo.run6502("86 01");
+
+  equal(appleToo.read_memory("01"), "AA", "Store Register X at Zero Page Memory Location");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
+});
+
+test("STX_ZPY", function() {
+  expected(2);
+
+  appleToo.set_register("XR", "AA");
+  appleToo.set_register("YR", "01");
+  appleToo.run6502("96 01");
+
+  equal(appleToo.read_memory("02"), "AA", "Store Register X at (Zero Page Memory Location + value in Register Y");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
+});
+
+test("STX_A", function() {
+  expect(2);
+
+  appleToo.set_register("XR", "AA");
+  appleToo.run6502("8E 13 37");
+  equal(appleToo.read_memory("1337"), "AA", "Store Register X at given absolute address");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
+});
+
+test("STY_ZP", function() {
+  expected(2);
+
+  appleToo.set_register("YR", "AA");
+  appleToo.run6502("84 01");
+
+  equal(appleToo.read_memory("01"), "AA", "Store Register Y at Zero Page Memory Location");
+  equal(appleToo.cycles, 3, "Should take 3 cycles");
+});
+
+test("STY_ZPX", function() {
+  expected(2);
+
+  appleToo.set_register("YR", "AA");
+  appleToo.set_register("XR", "01");
+  appleToo.run6502("94 01");
+
+  equal(appleToo.read_memory("02"), "AA", "Store Register Y at (Zero Page Memory Location + value in Register X");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
+});
+
+test("STY_A", function() {
+  expect(2);
+
+  appleToo.set_register("YR", "AA");
+  appleToo.run6502("8C 13 37");
+  equal(appleToo.read_memory("1337"), "AA", "Store Register Y at given absolute address");
+  equal(appleToo.cycles, 4, "Should take 4 cycles");
+});
+
+module("Arithmetic", setupTeardown);
+
+
+
+// vim: expandtab:ts=2:sw=2

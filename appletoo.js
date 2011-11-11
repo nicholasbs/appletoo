@@ -5,7 +5,7 @@ var AppleToo = function() {
   this.AC; // Registers
   this.XR;
   this.YR;
-  this.SR;
+  this.SR = 0;
   this.SP;
   this.PC = 0;
 
@@ -84,6 +84,31 @@ AppleToo.prototype.set_register = function(register, val) {
   return this[register] = parseInt(val, 16);
 }
 
+AppleToo.prototype.get_status_flags = function() {
+  var bits = zero_pad(this.SR, 8, 2).split('');
+  bits = bits.map(function(item) {
+    return parseInt(item, 10);
+  });
+  return {
+    N: bits[0],
+    V: bits[1],
+    _: bits[2],
+    B: bits[3],
+    D: bits[4],
+    I: bits[5],
+    Z: bits[6],
+    C: bits[7]
+  };
+};
+
+AppleToo.prototype.set_status_flags = function(obj) {
+  for (var bit in obj) {
+    if (obj[bit]) {
+      this.SR = this.SR | SR_FLAGS[bit];
+    }
+  };
+};
+
 AppleToo.prototype.ldy_i = function() {
   this.YR = this.get_arg();
   this.cycles += 2;
@@ -139,7 +164,18 @@ var OPCODES = {
   "A6" : "ldx_zp",
   "A9" : "lda_i",
   "A5" : "lda_zp"
-}
+};
+
+var SR_FLAGS = {
+  "N" : 128,
+  "V" : 64,
+  "_" : 32,
+  "B" : 16,
+  "D" : 8,
+  "I" : 4,
+  "Z" : 2,
+  "C" : 1
+};
 
 // Utilities
 function zero_pad(n, len, base) {
@@ -151,3 +187,5 @@ function zero_pad(n, len, base) {
   }
   return result;
 }
+
+// vim: expandtab:ts=2:sw=2

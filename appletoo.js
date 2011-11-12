@@ -299,6 +299,23 @@ AppleToo.prototype.lda_zp = function() {
   }
 };
 
+AppleToo.prototype.lda_zpx = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
+  var offset = this.get_arg(),
+      addr = offset + this.XR;
+  this.AC = this._read_memory(addr);
+  this.cycles += 4;
+
+  //Set negative flag
+  this.SR |= this.AC & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.AC === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
+};
+
 var OPCODES = {
   "A0" : "ldy_i",
   "A4" : "ldy_zp",
@@ -311,7 +328,13 @@ var OPCODES = {
   "AE" : "ldx_a",
   "BE" : "ldx_ay",
   "A9" : "lda_i",
-  "A5" : "lda_zp"
+  "A5" : "lda_zp",
+  "B5" : "lda_zpx",
+  "AD" : "lda_a",
+  "BD" : "lda_ax",
+  "B9" : "lda_ay",
+  "A1" : "lda_ix",
+  "B1" : "lda_iy"
 };
 
 var SR_FLAGS = {

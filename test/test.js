@@ -235,7 +235,7 @@ test("LDX_AY", function() {
 });
 
 test("LDA_I", function() {
-  expect(2);
+  expect(5);
 
   appleToo.run6502("A9 11");
   equal(appleToo.get_register("AC"), "11", "Argument should be loaded into Accumulator");

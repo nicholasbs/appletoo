@@ -377,6 +377,21 @@ AppleToo.prototype.lda_ay = function() {
     this.SR |= SR_FLAGS["Z"];
   }
 };
+AppleToo.prototype.stx_zp = function() {
+  var addr = this.get_arg();
+  this._write_memory(addr, this.XR);
+  this.cycles += 3;
+};
+AppleToo.prototype.stx_zpy = function() {
+  var addr = this.YR + this.get_arg();
+  this._write_memory(addr, this.XR);
+  this.cycles += 4;
+};
+AppleToo.prototype.stx_a = function() {
+  var addr = this.get_arg(2);
+  this._write_memory(addr, this.XR);
+  this.cycles += 4;
+};
 AppleToo.prototype.sty_zp = function() {
   var addr = this.get_arg();
   this._write_memory(addr, this.YR);
@@ -412,6 +427,9 @@ var OPCODES = {
   "B9" : "lda_ay",
   "A1" : "lda_ix",
   "B1" : "lda_iy",
+  "86" : "stx_zp",
+  "96" : "stx_zpy",
+  "8E" : "stx_a",
   "84" : "sty_zp",
   "94" : "sty_zpx",
   "8C" : "sty_a"

@@ -316,6 +316,22 @@ AppleToo.prototype.lda_zpx = function() {
   }
 };
 
+AppleToo.prototype.lda_a = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
+  var addr = this.get_arg(2);
+  this.AC = this._read_memory(addr);
+  this.cycles += 4;
+
+  //Set negative flag
+  this.SR |= this.AC & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.AC === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
+};
+
 var OPCODES = {
   "A0" : "ldy_i",
   "A4" : "ldy_zp",

@@ -213,8 +213,18 @@ AppleToo.prototype.ldx_zp = function() {
   this.cycles += 3;
 };
 AppleToo.prototype.lda_i = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
   this.AC = this.get_arg();
   this.cycles += 2;
+
+  //Set negative flag
+  this.SR |= this.AC & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.AC === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
 };
 AppleToo.prototype.lda_zp = function() {
   var addr = this.get_arg();

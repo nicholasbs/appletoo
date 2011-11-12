@@ -208,9 +208,35 @@ AppleToo.prototype.ldx_i = function() {
   }
 };
 AppleToo.prototype.ldx_zp = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
   var addr = this.get_arg();
-  this.XR = this.read_memory(addr);
+  this.XR = this._read_memory(addr);
   this.cycles += 3;
+
+  //Set negative flag
+  this.SR |= this.XR & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.XR === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
+};
+AppleToo.prototype.ldx_zpy = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
+  var offset = this.get_arg(),
+      addr = offset + this.YR;
+  this.XR = this._read_memory(addr);
+  this.cycles += 4;
+
+  //Set negative flag
+  this.SR |= this.XR & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.XR === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
 };
 AppleToo.prototype.lda_i = function() {
   // Reset Zero and Negative Flags
@@ -240,6 +266,7 @@ var OPCODES = {
   "BC" : "ldy_ax",
   "A2" : "ldx_i",
   "A6" : "ldx_zp",
+  "B6" : "ldx_zpy",
   "A9" : "lda_i",
   "A5" : "lda_zp"
 };

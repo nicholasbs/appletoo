@@ -14,7 +14,8 @@ var AppleToo = function() {
   this.initialize_memory();
 };
 
-AppleToo.prototype.run6502 = function(program) {
+AppleToo.prototype.run6502 = function(program, pc) {
+  this.PC = pc === undefined ? 0 : pc;
   var opcode;
 
   this.program = program.replace(/\s+/g, "");
@@ -23,7 +24,7 @@ AppleToo.prototype.run6502 = function(program) {
     this.run(opcode);
   }
 
-  this.print_registers();
+  //this.print_registers();
 };
 
 AppleToo.prototype.run = function(opcode) {
@@ -54,10 +55,17 @@ AppleToo.prototype.read_memory = function(loc) {
   return this.memory[loc].toString(16);
 };
 
+AppleToo.prototype._read_memory = function(loc) {
+  if (typeof loc === "string") {
+    loc = parseInt(loc, 16);
+  }
+  return this.memory[loc];
+};
+
 AppleToo.prototype.write_memory = function(hex_loc, val) {
   var loc = parseInt(hex_loc, 16);
   if (val.toString(16).length <= 2) {
-    this.memory[loc] = val;
+    this.memory[loc] = parseInt(val, 16);
   } else {
     throw new Error("ERROR: Tried to write more than a word!");
   }
@@ -110,13 +118,33 @@ AppleToo.prototype.set_status_flags = function(obj) {
 };
 
 AppleToo.prototype.ldy_i = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
   this.YR = this.get_arg();
   this.cycles += 2;
+
+  //Set negative flag
+  this.SR |= this.YR & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.YR === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
 };
 AppleToo.prototype.ldy_zp = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
   var addr = this.get_arg();
-  this.YR = this.read_memory(addr);
+  this.YR = this._read_memory(addr);
   this.cycles += 3;
+
+  //Set negative flag
+  this.SR |= this.YR & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.YR === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
 }
 AppleToo.prototype.ldy_zpx = function() {
   var offset = this.get_arg(),
@@ -186,6 +214,10 @@ function zero_pad(n, len, base) {
     result = "0" + result;
   }
   return result;
+}
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
 }
 
 // vim: expandtab:ts=2:sw=2

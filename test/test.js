@@ -380,7 +380,7 @@ test("LDA_IDX", function() {
 });
 
 test("LDA_IDY", function() {
-  expect(2);
+  expect(5);
 
   appleToo.write_memory("17", "10");
   appleToo.write_memory("18", "D0");

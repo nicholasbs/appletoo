@@ -410,6 +410,31 @@ AppleToo.prototype.sty_a = function() {
   this._write_memory(addr, this.YR);
   this.cycles += 4;
 };
+AppleToo.prototype.sta_zp = function() {
+  var addr = this.get_arg();
+  this._write_memory(addr, this.AC);
+  this.cycles += 3;
+};
+AppleToo.prototype.sta_zpx = function() {
+  var addr = this.XR + this.get_arg();
+  this._write_memory(addr, this.AC);
+  this.cycles += 4;
+};
+AppleToo.prototype.sta_a = function() {
+  var addr = this.get_arg(2);
+  this._write_memory(addr, this.AC);
+  this.cycles += 4;
+};
+AppleToo.prototype.sta_ax = function() {
+  var addr = this.XR + this.get_arg(2);
+  this._write_memory(addr, this.AC);
+  this.cycles += 5;
+};
+AppleToo.prototype.sta_ay = function() {
+  var addr = this.YR + this.get_arg(2);
+  this._write_memory(addr, this.AC);
+  this.cycles += 5;
+};
 
 AppleToo.prototype.lda_idx = function() {
   // Reset Zero and Negative Flags
@@ -453,7 +478,12 @@ var OPCODES = {
   "8E" : "stx_a",
   "84" : "sty_zp",
   "94" : "sty_zpx",
-  "8C" : "sty_a"
+  "8C" : "sty_a",
+  "85" : "sta_zp",
+  "95" : "sta_zpx",
+  "8D" : "sta_a",
+  "9D" : "sta_ax",
+  "99" : "sta_ay"
 };
 
 var SR_FLAGS = {

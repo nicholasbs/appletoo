@@ -412,7 +412,7 @@ test("STA_A", function() {
 });
 
 test("STA_AX", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("AC", "AA");
   appleToo.set_register("XR", "02");
@@ -422,7 +422,7 @@ test("STA_AX", function() {
 });
 
 test("STA_AY", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("AC", "AA");
   appleToo.set_register("YR", "02");
@@ -432,7 +432,7 @@ test("STA_AY", function() {
 });
 
 test("STA_ZP", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("AC", "AA");
   appleToo.run6502("85 01");
@@ -442,7 +442,7 @@ test("STA_ZP", function() {
 });
 
 test("STA_ZPX", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("AC", "AA");
   appleToo.set_register("XR", "01");
@@ -483,7 +483,7 @@ test("STA_IDY", function() {
 });
 
 test("STX_ZP", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("XR", "AA");
   appleToo.run6502("86 01");
@@ -493,7 +493,7 @@ test("STX_ZP", function() {
 });
 
 test("STX_ZPY", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("XR", "AA");
   appleToo.set_register("YR", "01");
@@ -513,7 +513,7 @@ test("STX_A", function() {
 });
 
 test("STY_ZP", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("YR", "AA");
   appleToo.run6502("84 01");
@@ -523,7 +523,7 @@ test("STY_ZP", function() {
 });
 
 test("STY_ZPX", function() {
-  expected(2);
+  expect(2);
 
   appleToo.set_register("YR", "AA");
   appleToo.set_register("XR", "01");

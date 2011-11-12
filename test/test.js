@@ -336,7 +336,7 @@ test("LDA_AX", function() {
 });
 
 test("LDA_AY", function() {
-  expect(2);
+  expect(5);
 
   appleToo.write_memory("AABB", "11");
   appleToo.set_register("YR", "BB");

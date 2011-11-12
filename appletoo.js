@@ -447,7 +447,7 @@ var OPCODES = {
   "BD" : "lda_ax",
   "B9" : "lda_ay",
   "A1" : "lda_idx",
-  "B1" : "lda_idy"
+  "B1" : "lda_idy",
   "86" : "stx_zp",
   "96" : "stx_zpy",
   "8E" : "stx_a",

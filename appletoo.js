@@ -163,9 +163,19 @@ AppleToo.prototype.ldy_zpx = function() {
   }
 };
 AppleToo.prototype.ldy_a = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
   var addr = this.get_arg(2);
-  this.YR = this.read_memory(addr);
+  this.YR = this._read_memory(addr);
   this.cycles += 4;
+
+  //Set negative flag
+  this.SR |= this.YR & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.YR === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
 };
 AppleToo.prototype.ldy_ax = function() {
   var offset = this.get_arg(2),

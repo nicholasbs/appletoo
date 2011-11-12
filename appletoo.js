@@ -380,21 +380,6 @@ AppleToo.prototype.lda_ay = function() {
     this.SR |= SR_FLAGS["Z"];
   }
 };
-AppleToo.prototype.sty_zp = function() {
-  var addr = this.get_arg();
-  this._write_memory(addr, this.YR);
-  this.cycles += 3;
-};
-AppleToo.prototype.sty_zpx = function() {
-  var addr = this.XR + this.get_arg();
-  this._write_memory(addr, this.YR);
-  this.cycles += 4;
-};
-AppleToo.prototype.sty_a = function() {
-  var addr = this.get_arg(2);
-  this._write_memory(addr, this.YR);
-  this.cycles += 4;
-};
 
 AppleToo.prototype.lda_idx = function() {
   // Reset Zero and Negative Flags
@@ -412,6 +397,40 @@ AppleToo.prototype.lda_idx = function() {
   if (this.AC === 0) {
     this.SR |= SR_FLAGS["Z"];
   }
+};
+
+AppleToo.prototype.lda_idy = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
+  var offset = this.get_arg(),
+      addr = this.YR + offset,
+      final_addr = this.read_memory(addr, true);
+  this.AC = this._read_memory(final_addr);
+  this.cycles += 6;
+
+  //Set negative flag
+  this.SR |= this.AC & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.AC === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
+};
+
+AppleToo.prototype.sty_zp = function() {
+  var addr = this.get_arg();
+  this._write_memory(addr, this.YR);
+  this.cycles += 3;
+};
+AppleToo.prototype.sty_zpx = function() {
+  var addr = this.XR + this.get_arg();
+  this._write_memory(addr, this.YR);
+  this.cycles += 4;
+};
+AppleToo.prototype.sty_a = function() {
+  var addr = this.get_arg(2);
+  this._write_memory(addr, this.YR);
+  this.cycles += 4;
 };
 
 var OPCODES = {
@@ -432,7 +451,7 @@ var OPCODES = {
   "BD" : "lda_ax",
   "B9" : "lda_ay",
   "A1" : "lda_idx",
-  "B1" : "lda_idy"
+  "B1" : "lda_idy",
   "84" : "sty_zp",
   "94" : "sty_zpx",
   "8C" : "sty_a"

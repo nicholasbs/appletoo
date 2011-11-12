@@ -48,9 +48,12 @@ AppleToo.prototype.initialize_memory = function() {
   }
 };
 
-AppleToo.prototype.read_memory = function(loc) {
+AppleToo.prototype.read_memory = function(loc, word) {
   if (typeof loc === "string") {
     loc = parseInt(loc, 16);
+  }
+  if (word !== undefined) {
+    return (this.memory[loc + 1].toString(16) + this.memory[loc].toString(16)).toString(16);
   }
   return this.memory[loc].toString(16).toUpperCase();
 };
@@ -408,6 +411,24 @@ AppleToo.prototype.sty_a = function() {
   this.cycles += 4;
 };
 
+AppleToo.prototype.lda_idx = function() {
+  // Reset Zero and Negative Flags
+  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
+
+  var offset = this.get_arg(),
+      addr = this.XR + offset,
+      final_addr = this.read_memory(addr, true);
+  this.AC = this._read_memory(final_addr);
+  this.cycles += 6;
+
+  //Set negative flag
+  this.SR |= this.AC & SR_FLAGS["N"];
+  //Set zero flag
+  if (this.AC === 0) {
+    this.SR |= SR_FLAGS["Z"];
+  }
+};
+
 var OPCODES = {
   "A0" : "ldy_i",
   "A4" : "ldy_zp",
@@ -425,8 +446,8 @@ var OPCODES = {
   "AD" : "lda_a",
   "BD" : "lda_ax",
   "B9" : "lda_ay",
-  "A1" : "lda_ix",
-  "B1" : "lda_iy",
+  "A1" : "lda_idx",
+  "B1" : "lda_idy"
   "86" : "stx_zp",
   "96" : "stx_zpy",
   "8E" : "stx_a",

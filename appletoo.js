@@ -382,6 +382,11 @@ AppleToo.prototype.sty_zp = function() {
   this._write_memory(addr, this.YR);
   this.cycles += 3;
 };
+AppleToo.prototype.sty_zpx = function() {
+  var addr = this.XR + this.get_arg();
+  this._write_memory(addr, this.YR);
+  this.cycles += 4;
+}
 
 var OPCODES = {
   "A0" : "ldy_i",
@@ -402,7 +407,8 @@ var OPCODES = {
   "B9" : "lda_ay",
   "A1" : "lda_ix",
   "B1" : "lda_iy",
-  "84" : "sty_zp"
+  "84" : "sty_zp",
+  "94" : "sty_zpx"
 };
 
 var SR_FLAGS = {

@@ -43,7 +43,7 @@ AppleToo.prototype.print_registers = function() {
 };
 
 AppleToo.prototype.initialize_memory = function() {
-  for (var i=0; i<1024; i++) {
+  for (var i=0; i<8192; i++) {
     this.memory[i] = 0;
   }
 };
@@ -74,13 +74,18 @@ AppleToo.prototype.write_memory = function(hex_loc, val) {
   }
 };
 
-// Internally, we data in memory is numbers, not strings.
+// Internally, data in memory is numbers, not strings.
 AppleToo.prototype._write_memory = function(loc, val) {
   if (typeof loc === "string") {
     loc = parseInt(loc, 16);
   }
-  if (val <= 65535) {
+  if (val <= 255) {
     this.memory[loc] = val;
+  } else if (val <= 65535) {
+    var high_byte = val & 65280,
+        low_byte = val & 255;
+    this.memory[loc] = low_byte;
+    this.memory[loc+1] = high_byte;
   } else {
     throw new Error("ERROR: Tried to write more than a word!");
   }
@@ -472,6 +477,20 @@ AppleToo.prototype.sta_ay = function() {
   this._write_memory(addr, this.AC);
   this.cycles += 5;
 };
+AppleToo.prototype.sta_idx = function() {
+  var offset = this.get_arg(),
+      addr = this.XR + offset,
+      final_addr = this.read_memory(addr, true);
+  this._write_memory(final_addr, this.AC);
+  this.cycles += 6;
+};
+AppleToo.prototype.sta_idy = function() {
+  var offset = this.get_arg(),
+      addr = this.YR + offset,
+      final_addr = this.read_memory(addr, true);
+  this._write_memory(final_addr, this.AC);
+  this.cycles += 6;
+};
 
 var OPCODES = {
   "A0" : "ldy_i",
@@ -502,7 +521,9 @@ var OPCODES = {
   "95" : "sta_zpx",
   "8D" : "sta_a",
   "9D" : "sta_ax",
-  "99" : "sta_ay"
+  "99" : "sta_ay",
+  "81" : "sta_idx",
+  "91" : "sta_idy"
 };
 
 var SR_FLAGS = {

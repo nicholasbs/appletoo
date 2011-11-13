@@ -460,10 +460,8 @@ test("STA_IDX", function() {
 
   appleToo.write_memory("17", "10");
   appleToo.write_memory("18", "D0");
-  appleToo.write_memory("D010", "AF");
   appleToo.run6502("81 15");
-
-  equal(appleToo.read_memory("AF"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with X");
+  equal(appleToo.read_memory("D010"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with X");
   equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
 
@@ -475,10 +473,9 @@ test("STA_IDY", function() {
 
   appleToo.write_memory("17", "10");
   appleToo.write_memory("18", "D0");
-  appleToo.write_memory("D010", "AF");
   appleToo.run6502("91 15");
 
-  equal(appleToo.read_memory("AF"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with Y");
+  equal(appleToo.read_memory("D010"), "BB", "Store Accumlator using Zero Page Indexed Indirect addressing mode with Y");
   equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
 

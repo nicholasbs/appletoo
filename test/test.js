@@ -2,13 +2,35 @@ var appleToo,
     setupTeardown = {
       setup: function() {
         appleToo = new AppleToo();
-        unset_flags = {N:0, V:0, _:0, B:0, D:0, I:0, Z:0, C:0};
       },
       teardown: function() {
         appleToo = undefined;
       }
     },
-    unset_flags;
+    unset_flags = {N:0, V:0, _:0, B:0, D:0, I:0, Z:0, C:0},
+    zero_flag = clone(unset_flags),
+    neg_flag = clone(unset_flags);
+
+zero_flag["Z"] = 1;
+neg_flag["N"] = 1;
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+//TODO: Make this less hacky and awful
+function test_status_after(appleToo, program, expected_SR) {
+  var test_string = "flag(s) should be set";
+  for (var k in expected_SR) {
+    if (expected_SR[k] === 1) {
+      test_string = k + ", " + test_string;
+    }
+  }
+  test_string = test_string.replace(", flag", " flag");
+  appleToo.run6502(program);
+  deepEqual(appleToo.get_status_flags(), expected_SR, test_string);
+}
+
 
 module("Helper functions", setupTeardown);
 test("get_register", function() {
@@ -40,13 +62,8 @@ test("LDY_I", function() {
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
-  appleToo.run6502("A0 00", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
-
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
-  appleToo.run6502("A0 FF", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A0 00", zero_flag);
+  test_status_after(appleToo, "A0 FF", neg_flag);
 });
 
 test("LDY_ZP", function() {
@@ -59,15 +76,11 @@ test("LDY_ZP", function() {
   equal(appleToo.cycles, 3, "Should take 3 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("0F", "00");
-  appleToo.run6502("A4 0F", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "A4 0F", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("0F", "FF");
-  appleToo.run6502("A4 0F", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A4 0F", neg_flag);
 });
 
 test("LDY_ZPX", function() {
@@ -81,15 +94,11 @@ test("LDY_ZPX", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("03", "00");
-  appleToo.run6502("B4 02", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "B4 02", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("03", "FF");
-  appleToo.run6502("B4 02", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "B4 02", neg_flag);
 });
 
 test("LDY_A", function() {
@@ -101,15 +110,11 @@ test("LDY_A", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("ABCD", "00");
-  appleToo.run6502("AC AB CD");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "AC AB CD", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("ABCD", "FF");
-  appleToo.run6502("AC AB CD");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "AC AB CD", neg_flag);
 });
 
 test("LDY_AX", function() {
@@ -122,15 +127,11 @@ test("LDY_AX", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("AABB", "00");
-  appleToo.run6502("BC AA 00");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "BC AA 00", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("AABB", "FF");
-  appleToo.run6502("BC AA 00");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "BC AA 00", neg_flag);
 });
 
 test("LDX_I", function() {
@@ -141,13 +142,8 @@ test("LDX_I", function() {
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
-  appleToo.run6502("A2 00", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
-
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
-  appleToo.run6502("A2 FF", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A2 00", zero_flag);
+  test_status_after(appleToo, "A2 FF", neg_flag);
 });
 
 test("LDX_ZP", function() {
@@ -160,15 +156,11 @@ test("LDX_ZP", function() {
   equal(appleToo.cycles, 3, "Should take 3 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("0F", "00");
-  appleToo.run6502("A6 0F", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "A6 0F", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("0F", "FF");
-  appleToo.run6502("A6 0F", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A6 0F", neg_flag);
 });
 
 test("LDX_ZPY", function() {
@@ -182,15 +174,11 @@ test("LDX_ZPY", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("03", "00");
-  appleToo.run6502("B6 02", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "B6 02", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("03", "FF");
-  appleToo.run6502("B6 02", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "B6 02", neg_flag);
 });
 
 test("LDX_A", function() {
@@ -202,15 +190,11 @@ test("LDX_A", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("ABCD", "00");
-  appleToo.run6502("AE AB CD");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "AE AB CD", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("ABCD", "FF");
-  appleToo.run6502("AE AB CD");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "AE AB CD", neg_flag);
 })
 
 test("LDX_AY", function() {
@@ -223,15 +207,11 @@ test("LDX_AY", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("AABB", "00");
-  appleToo.run6502("BE AA 00");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "BE AA 00", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("AABB", "FF");
-  appleToo.run6502("BE AA 00");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "BE AA 00", neg_flag);
 });
 
 test("LDA_I", function() {
@@ -242,13 +222,8 @@ test("LDA_I", function() {
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
-  appleToo.run6502("A9 00", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
-
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
-  appleToo.run6502("A9 FF", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A9 00", zero_flag);
+  test_status_after(appleToo, "A9 FF", neg_flag);
 });
 
 test("LDA_ZP", function() {
@@ -261,15 +236,11 @@ test("LDA_ZP", function() {
   equal(appleToo.cycles, 3, "Should take 3 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("0F", "00");
-  appleToo.run6502("A5 0F", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "A5 0F", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("0F", "FF");
-  appleToo.run6502("A5 0F", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A5 0F", neg_flag);
 });
 
 test("LDA_ZPX", function() {
@@ -283,15 +254,11 @@ test("LDA_ZPX", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("03", "00");
-  appleToo.run6502("B5 02", 0);
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "B5 02", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("03", "FF");
-  appleToo.run6502("B5 02", 0);
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "B5 02", neg_flag);
 });
 
 test("LDA_A", function() {
@@ -303,15 +270,11 @@ test("LDA_A", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("ABCD", "00");
-  appleToo.run6502("AD AB CD");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "AD AB CD", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("ABCD", "FF");
-  appleToo.run6502("AD AB CD");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "AD AB CD", neg_flag);
 })
 
 test("LDA_AX", function() {
@@ -324,15 +287,11 @@ test("LDA_AX", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("AABB", "00");
-  appleToo.run6502("BD AA 00");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "BD AA 00", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("AABB", "FF");
-  appleToo.run6502("BD AA 00");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "BD AA 00", neg_flag);
 });
 
 test("LDA_AY", function() {
@@ -345,15 +304,11 @@ test("LDA_AY", function() {
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("AABB", "00");
-  appleToo.run6502("B9 AA 00");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "B9 AA 00", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("AABB", "FF");
-  appleToo.run6502("B9 AA 00");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "B9 AA 00", neg_flag);
 });
 
 test("LDA_IDX", function() {
@@ -368,15 +323,11 @@ test("LDA_IDX", function() {
   equal(appleToo.cycles, 6, "Should take 6 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("D010", "00");
-  appleToo.run6502("A1 15");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "A1 15", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("D010", "FF");
-  appleToo.run6502("A1 15");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "A1 15", neg_flag);
 });
 
 test("LDA_IDY", function() {
@@ -391,16 +342,13 @@ test("LDA_IDY", function() {
   equal(appleToo.cycles, 6, "Should take 6 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  var zero_flag = clone(unset_flags); zero_flag["Z"] = 1;
   appleToo.write_memory("D010", "00");
-  appleToo.run6502("B1 15");
-  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero Flag should be set");
+  test_status_after(appleToo, "B1 15", zero_flag);
 
-  var neg_flag = clone(unset_flags); neg_flag["N"] = 1;
   appleToo.write_memory("D010", "FF");
-  appleToo.run6502("B1 15");
-  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative Flag should be set");
+  test_status_after(appleToo, "B1 15", neg_flag);
 });
+
 
 test("STA_A", function() {
   expect(2);
@@ -540,7 +488,5 @@ test("STY_A", function() {
 });
 
 module("Arithmetic", setupTeardown);
-
-
 
 // vim: expandtab:ts=2:sw=2

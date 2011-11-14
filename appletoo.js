@@ -548,8 +548,4 @@ function zero_pad(n, len, base) {
   return result;
 }
 
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
 // vim: expandtab:ts=2:sw=2

@@ -53,6 +53,93 @@ test("set_status_flags", function() {
   equal(appleToo.SR, 130);
 });
 
+module("Memory Addressing Modes", setupTeardown);
+test("Immediate", function() {
+  expect(2);
+
+  appleToo.write_memory(appleToo.PC, 0xBB);
+
+  equal(appleToo.immediate(), 0xBB, "AppleToo.immediate should return the argument passed to the opcode");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Zero Page", function() {
+  expect(2);
+
+  appleToo.write_memory(0x01, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0x01);
+
+  equal(appleToo.zero_page(), 0xBB, "AppleToo.zero_page should return the value stored at the given zero page address");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Zero Page, Indexed With X", function() {
+  expect(2);
+
+  appleToo.write_memory(0x02, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0x01);
+  appleToo.set_register("XR", 0x01);
+
+  equal(appleToo.zero_page_indexed_with_x(), 0xBB, "AppleToo.zero_page_indexed_with_x should return the value at the zero page address equal to the given address plus the value in the X register");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Zero Page, Indexed With Y", function() {
+  expect(2);
+
+  appleToo.write_memory(0x02, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0x01);
+  appleToo.set_register("YR", 0x01);
+
+  equal(appleToo.zero_page_indexed_with_y(), 0xBB, "AppleToo.zero_page_indexed_with_y should return the value at the zero page address equal to the given address plus the value in the Y register");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Absolute", function() {
+  expect(2);
+
+  appleToo.write_memory(0x1BBF, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0xBF);
+  appleToo.write_memory(appleToo.PC+1, 0x1B);
+
+  equal(appleToo.absolute(), 0xBB, "AppleToo.absolute should return the value at the given (two byte) address");
+  equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
+});
+
+test("Absolute, Indexed With X", function() {
+  expect(2);
+
+  appleToo.write_memory(0x1BBF, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0xBE);
+  appleToo.write_memory(appleToo.PC+1, 0x1B);
+  appleToo.set_register("XR", 0x01);
+
+  equal(appleToo.absolute_indexed_with_x(), 0xBB, "AppleToo.absolute_indexed_with_x should return the value at the given (two byte) address offset with the value of the X register");
+  equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
+});
+
+test("Absolute, Indexed With Y", function() {
+  expect(2);
+
+  appleToo.write_memory(0x1BBF, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0xBE);
+  appleToo.write_memory(appleToo.PC+1, 0x1B);
+  appleToo.set_register("YR", 0x01);
+
+  equal(appleToo.absolute_indexed_with_y(), 0xBB, "AppleToo.absolute_indexed_with_y should return the value at the given (two byte) address offset with the value of the Y register");
+  equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
+});
+
+test("Accumlator", function() {
+  expect(1);
+
+  appleToo.set_register("AC", 0xBB);
+
+  equal(appleToo.accumulator(), 0xBB, "AppleToo.accumulator should return the value in the Accumulator register");
+  equal(appleToo.PC, 0xC000, "Program Counter should not be incremented");
+});
+
+
 module("Load and Store", setupTeardown);
 test("LDY_I", function() {
   expect(5);

@@ -38,6 +38,10 @@ AppleToo.prototype.run = function(opcode) {
   return this[OPCODES[opcode]]();
 };
 
+AppleToo.prototype.immediate = function() {
+  return this._read_memory(this.PC++);
+};
+
 AppleToo.prototype.print_registers = function() {
   console.log("--------------");
   console.log("AC: " + this.AC);
@@ -69,11 +73,14 @@ AppleToo.prototype._read_memory = function(loc) {
   return this.memory[loc];
 };
 
-AppleToo.prototype.write_memory = function(hex_loc, val) {
-  var loc = parseInt(hex_loc, 16);
-  if (val.toString(16).length <= 2) {
-    this.memory[loc] = parseInt(val, 16);
+AppleToo.prototype.write_memory = function(loc, val) {
+  if (typeof loc === "string") loc = parseInt(loc, 16);
+  if (typeof val === "string") val = parseInt(val, 16);
+
+  if (val <= 255) {
+    this.memory[loc] = val;
   } else {
+    console.log(val);
     throw new Error("ERROR: Tried to write more than a word!");
   }
 };

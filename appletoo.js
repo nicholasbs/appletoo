@@ -2,12 +2,14 @@ var AppleToo = function() {
   // Memory is stored as numbers
   // See: http://jsperf.com/tostring-16-vs-parseint-x-16
   this.memory = [];
-  this.AC; // Registers
-  this.XR;
-  this.YR;
+  this.AC = 0; // Registers
+  this.XR = 0;
+  this.YR = 0;
   this.SR = 0;
   this.SP;
-  this.PC = 0;
+  this.PC = 0xC000;
+
+  this.running = true;
 
   this.cycles = 0;
 
@@ -15,13 +17,18 @@ var AppleToo = function() {
 };
 
 AppleToo.prototype.run6502 = function(program, pc) {
-  this.PC = pc === undefined ? 0 : pc;
+  this.running = true;
+  this.PC = pc === undefined ? 0xC000 : pc;
   var opcode;
 
   this.program = program.replace(/\s+/g, "");
-  while (this.PC < this.program.length) {
-    opcode = this.get_opcode();
-    this.run(opcode);
+
+  for (var i = 0; i < this.program.length; i += 2) {
+    this.memory[0xC000 + i/2] = parseInt(this.program.substr(i, 2), 16);
+  }
+
+  while (this.running) {
+    this.run(this._read_memory(this.PC++));
   }
 
   //this.print_registers();
@@ -43,7 +50,7 @@ AppleToo.prototype.print_registers = function() {
 };
 
 AppleToo.prototype.initialize_memory = function() {
-  for (var i=0; i<8192; i++) {
+  for (var i=0; i<65536; i++) {
     this.memory[i] = 0;
   }
 };
@@ -59,9 +66,6 @@ AppleToo.prototype.read_memory = function(loc, word) {
 };
 
 AppleToo.prototype._read_memory = function(loc) {
-  if (typeof loc === "string") {
-    loc = parseInt(loc, 16);
-  }
   return this.memory[loc];
 };
 
@@ -91,26 +95,28 @@ AppleToo.prototype._write_memory = function(loc, val) {
   }
 };
 
-AppleToo.prototype.get_opcode = function() {
-  var opcode = this.program.substr(this.PC, 2);
-  this.PC += 2;
-  return opcode;
-};
-
 AppleToo.prototype.get_arg = function(bytes) {
   bytes = bytes || 1;
-  var arg = this.program.substr(this.PC, bytes*2);
-  this.PC += bytes*2;
-  return parseInt(arg, 16)
+  if (bytes === 1) {
+    return this._read_memory(this.PC++);
+  } else {
+    var ret = this.read_word(this.PC);
+    this.PC += 2;
+    return ret;
+  }
+};
+
+AppleToo.prototype.read_word = function(addr) {
+ return this._read_memory(addr) + (this._read_memory(addr + 1) << 8);
 };
 
 AppleToo.prototype.get_register = function(register) {
   return zero_pad(this[register]);
-}
+};
 
 AppleToo.prototype.set_register = function(register, val) {
   return this[register] = parseInt(val, 16);
-}
+};
 
 AppleToo.prototype.get_status_flags = function() {
   var bits = zero_pad(this.SR, 8, 2).split('');
@@ -392,7 +398,7 @@ AppleToo.prototype.lda_idx = function() {
 
   var offset = this.get_arg(),
       addr = this.XR + offset,
-      final_addr = this.read_memory(addr, true);
+      final_addr = this.read_word(addr);
   this.AC = this._read_memory(final_addr);
   this.cycles += 6;
 
@@ -410,7 +416,7 @@ AppleToo.prototype.lda_idy = function() {
 
   var offset = this.get_arg(),
       addr = this.YR + offset,
-      final_addr = this.read_memory(addr, true);
+      final_addr = this.read_word(addr);
   this.AC = this._read_memory(final_addr);
   this.cycles += 6;
 
@@ -491,39 +497,43 @@ AppleToo.prototype.sta_idy = function() {
   this._write_memory(final_addr, this.AC);
   this.cycles += 6;
 };
+AppleToo.prototype.brk = function() {
+  this.running = false; //TODO Implement properly!
+};
 
 var OPCODES = {
-  "A0" : "ldy_i",
-  "A4" : "ldy_zp",
-  "B4" : "ldy_zpx",
-  "AC" : "ldy_a",
-  "BC" : "ldy_ax",
-  "A2" : "ldx_i",
-  "A6" : "ldx_zp",
-  "B6" : "ldx_zpy",
-  "AE" : "ldx_a",
-  "BE" : "ldx_ay",
-  "A9" : "lda_i",
-  "A5" : "lda_zp",
-  "B5" : "lda_zpx",
-  "AD" : "lda_a",
-  "BD" : "lda_ax",
-  "B9" : "lda_ay",
-  "A1" : "lda_idx",
-  "B1" : "lda_idy",
-  "86" : "stx_zp",
-  "96" : "stx_zpy",
-  "8E" : "stx_a",
-  "84" : "sty_zp",
-  "94" : "sty_zpx",
-  "8C" : "sty_a",
-  "85" : "sta_zp",
-  "95" : "sta_zpx",
-  "8D" : "sta_a",
-  "9D" : "sta_ax",
-  "99" : "sta_ay",
-  "81" : "sta_idx",
-  "91" : "sta_idy"
+  0xA0 : "ldy_i",
+  0xA4 : "ldy_zp",
+  0xB4 : "ldy_zpx",
+  0xAC : "ldy_a",
+  0xBC : "ldy_ax",
+  0xA2 : "ldx_i",
+  0xA6 : "ldx_zp",
+  0xB6 : "ldx_zpy",
+  0xAE : "ldx_a",
+  0xBE : "ldx_ay",
+  0xA9 : "lda_i",
+  0xA5 : "lda_zp",
+  0xB5 : "lda_zpx",
+  0xAD : "lda_a",
+  0xBD : "lda_ax",
+  0xB9 : "lda_ay",
+  0xA1 : "lda_idx",
+  0xB1 : "lda_idy",
+  0x86 : "stx_zp",
+  0x96 : "stx_zpy",
+  0x8E : "stx_a",
+  0x84 : "sty_zp",
+  0x94 : "sty_zpx",
+  0x8C : "sty_a",
+  0x85 : "sta_zp",
+  0x95 : "sta_zpx",
+  0x8D : "sta_a",
+  0x9D : "sta_ax",
+  0x99 : "sta_ay",
+  0x81 : "sta_idx",
+  0x91 : "sta_idy",
+  0x00 : "brk"
 };
 
 var SR_FLAGS = {

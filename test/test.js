@@ -105,16 +105,16 @@ test("LDY_A", function() {
   expect(5);
 
   appleToo.write_memory("ABCD", "11");
-  appleToo.run6502("AC AB CD");
+  appleToo.run6502("AC CD AB");
   equal(appleToo.get_register("YR"), "11", "Value at 2-byte argument should be loaded into Register Y");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("ABCD", "00");
-  test_status_after(appleToo, "AC AB CD", zero_flag);
+  test_status_after(appleToo, "AC CD AB", zero_flag);
 
   appleToo.write_memory("ABCD", "FF");
-  test_status_after(appleToo, "AC AB CD", neg_flag);
+  test_status_after(appleToo, "AC CD AB", neg_flag);
 });
 
 test("LDY_AX", function() {
@@ -122,16 +122,16 @@ test("LDY_AX", function() {
 
   appleToo.write_memory("AABB", "11");
   appleToo.set_register("XR", "BB");
-  appleToo.run6502("BC AA 00");
+  appleToo.run6502("BC 00 AA");
   equal(appleToo.get_register("YR"), "11", "Value at memory location (absolute arg + value at Register X) should be loaded into Register Y");
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("AABB", "00");
-  test_status_after(appleToo, "BC AA 00", zero_flag);
+  test_status_after(appleToo, "BC 00 AA", zero_flag);
 
   appleToo.write_memory("AABB", "FF");
-  test_status_after(appleToo, "BC AA 00", neg_flag);
+  test_status_after(appleToo, "BC 00 AA", neg_flag);
 });
 
 test("LDX_I", function() {
@@ -185,16 +185,16 @@ test("LDX_A", function() {
   expect(5);
 
   appleToo.write_memory("ABCD", "11");
-  appleToo.run6502("AE AB CD");
+  appleToo.run6502("AE CD AB");
   equal(appleToo.get_register("XR"), "11", "Value at 2-byte argument should be loaded into Register X");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("ABCD", "00");
-  test_status_after(appleToo, "AE AB CD", zero_flag);
+  test_status_after(appleToo, "AE CD AB", zero_flag);
 
   appleToo.write_memory("ABCD", "FF");
-  test_status_after(appleToo, "AE AB CD", neg_flag);
+  test_status_after(appleToo, "AE CD AB", neg_flag);
 })
 
 test("LDX_AY", function() {
@@ -202,16 +202,16 @@ test("LDX_AY", function() {
 
   appleToo.write_memory("AABB", "11");
   appleToo.set_register("YR", "BB");
-  appleToo.run6502("BE AA 00");
+  appleToo.run6502("BE 00 AA");
   equal(appleToo.get_register("XR"), "11", "Value at memory location (absolute arg + value at Register Y) should be loaded into Register X");
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("AABB", "00");
-  test_status_after(appleToo, "BE AA 00", zero_flag);
+  test_status_after(appleToo, "BE 00 AA", zero_flag);
 
   appleToo.write_memory("AABB", "FF");
-  test_status_after(appleToo, "BE AA 00", neg_flag);
+  test_status_after(appleToo, "BE 00 AA", neg_flag);
 });
 
 test("LDA_I", function() {
@@ -265,16 +265,16 @@ test("LDA_A", function() {
   expect(5);
 
   appleToo.write_memory("ABCD", "11");
-  appleToo.run6502("AD AB CD");
+  appleToo.run6502("AD CD AB");
   equal(appleToo.get_register("AC"), "11", "Value at 2-byte argument should be loaded into Accumulator");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("ABCD", "00");
-  test_status_after(appleToo, "AD AB CD", zero_flag);
+  test_status_after(appleToo, "AD CD AB", zero_flag);
 
   appleToo.write_memory("ABCD", "FF");
-  test_status_after(appleToo, "AD AB CD", neg_flag);
+  test_status_after(appleToo, "AD CD AB", neg_flag);
 })
 
 test("LDA_AX", function() {
@@ -282,16 +282,16 @@ test("LDA_AX", function() {
 
   appleToo.write_memory("AABB", "11");
   appleToo.set_register("XR", "BB");
-  appleToo.run6502("BD AA 00");
+  appleToo.run6502("BD 00 AA");
   equal(appleToo.get_register("AC"), "11", "Value at memory location (absolute arg + value at Register X) should be loaded into Accumlator");
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("AABB", "00");
-  test_status_after(appleToo, "BD AA 00", zero_flag);
+  test_status_after(appleToo, "BD 00 AA", zero_flag);
 
   appleToo.write_memory("AABB", "FF");
-  test_status_after(appleToo, "BD AA 00", neg_flag);
+  test_status_after(appleToo, "BD 00 AA", neg_flag);
 });
 
 test("LDA_AY", function() {
@@ -299,16 +299,16 @@ test("LDA_AY", function() {
 
   appleToo.write_memory("AABB", "11");
   appleToo.set_register("YR", "BB");
-  appleToo.run6502("B9 AA 00");
+  appleToo.run6502("B9 00 AA");
   equal(appleToo.get_register("AC"), "11", "Value at memory location (absolute arg + value at Register Y) should be loaded into Accumlator");
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
   appleToo.write_memory("AABB", "00");
-  test_status_after(appleToo, "B9 AA 00", zero_flag);
+  test_status_after(appleToo, "B9 00 AA", zero_flag);
 
   appleToo.write_memory("AABB", "FF");
-  test_status_after(appleToo, "B9 AA 00", neg_flag);
+  test_status_after(appleToo, "B9 00 AA", neg_flag);
 });
 
 test("LDA_IDX", function() {
@@ -354,7 +354,7 @@ test("STA_A", function() {
   expect(2);
 
   appleToo.set_register("AC", "AA");
-  appleToo.run6502("8D 13 37");
+  appleToo.run6502("8D 37 13");
   equal(appleToo.read_memory("1337"), "AA", "Store Accumlator at given absolute address");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
 });
@@ -364,7 +364,7 @@ test("STA_AX", function() {
 
   appleToo.set_register("AC", "AA");
   appleToo.set_register("XR", "02");
-  appleToo.run6502("9D 13 35");
+  appleToo.run6502("9D 35 13");
   equal(appleToo.read_memory("1337"), "AA", "Store Accumlator at given absolute address + value in Register X");
   equal(appleToo.cycles, 5, "Should take 5 cycles");
 });
@@ -374,7 +374,7 @@ test("STA_AY", function() {
 
   appleToo.set_register("AC", "AA");
   appleToo.set_register("YR", "02");
-  appleToo.run6502("99 13 35");
+  appleToo.run6502("99 35 13");
   equal(appleToo.read_memory("1337"), "AA", "Store Accumlator at given absolute address + value in Register Y");
   equal(appleToo.cycles, 5, "Should take 5 cycles");
 });
@@ -452,7 +452,7 @@ test("STX_A", function() {
   expect(2);
 
   appleToo.set_register("XR", "AA");
-  appleToo.run6502("8E 13 37");
+  appleToo.run6502("8E 37 13");
   equal(appleToo.read_memory("1337"), "AA", "Store Register X at given absolute address");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
 });
@@ -482,7 +482,7 @@ test("STY_A", function() {
   expect(2);
 
   appleToo.set_register("YR", "AA");
-  appleToo.run6502("8C 13 37");
+  appleToo.run6502("8C 37 13");
   equal(appleToo.read_memory("1337"), "AA", "Store Register Y at given absolute address");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
 });

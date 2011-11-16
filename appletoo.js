@@ -42,6 +42,31 @@ AppleToo.prototype.immediate = function() {
   return this._read_memory(this.PC++);
 };
 
+AppleToo.prototype.accumulator = function() {
+  return false;
+};
+AppleToo.prototype.relative = function() {
+  return false;
+};
+AppleToo.prototype.zero_page = function() {
+  return false;
+};
+AppleToo.prototype.zero_page_indexed_with_x = function() {
+  return false;
+};
+AppleToo.prototype.zero_page_indexed_with_y = function() {
+  return false;
+};
+AppleToo.prototype.absolute = function() {
+  return false;
+};
+AppleToo.prototype.absolute_indexed_with_x = function() {
+  return false;
+};
+AppleToo.prototype.absolute_indexed_with_y = function() {
+  return false;
+};
+
 AppleToo.prototype.print_registers = function() {
   console.log("--------------");
   console.log("AC: " + this.AC);

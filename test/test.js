@@ -54,12 +54,33 @@ test("set_status_flags", function() {
 });
 
 module("Memory Addressing Modes", setupTeardown);
+test("Accumlator", function() {
+  expect(2);
+
+  appleToo.set_register("AC", 0xBB);
+
+  equal(appleToo.accumulator(), 0xBB, "AppleToo.accumulator should return the value in the Accumulator register");
+  equal(appleToo.PC, 0xC000, "Program Counter should not be incremented");
+});
+
 test("Immediate", function() {
   expect(2);
 
   appleToo.write_memory(appleToo.PC, 0xBB);
 
   equal(appleToo.immediate(), 0xBB, "AppleToo.immediate should return the argument passed to the opcode");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Relative", function() {
+  expect(2);
+
+  //Running the function will change the program counter,
+  //so we store the value to test before that
+  var testValue = appleToo.PC + 0x10;
+  appleToo.write_memory(appleToo.PC, 0x10);
+
+  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter and its argument");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 
@@ -130,15 +151,17 @@ test("Absolute, Indexed With Y", function() {
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
 });
 
-test("Accumlator", function() {
-  expect(1);
+test("Absolute, Indirect Indexed With X", function() {
+  expect(2);
 
-  appleToo.set_register("AC", 0xBB);
+  appleToo.write_memory(0x1BBF, 0xBB);
+  appleToo.write_memory(appleToo.PC, 0xBE);
+  appleToo.write_memory(appleToo.PC+1, 0x1B);
+  appleToo.set_register("XR", 0x01);
 
-  equal(appleToo.accumulator(), 0xBB, "AppleToo.accumulator should return the value in the Accumulator register");
-  equal(appleToo.PC, 0xC000, "Program Counter should not be incremented");
+  equal(appleToo.absolute_indexed_with_x(), 0xBB, "AppleToo.absolute_indexed_with_x should return the value at the given (two byte) address offset with the value of the X register");
+  equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
 });
-
 
 module("Load and Store", setupTeardown);
 test("LDY_I", function() {

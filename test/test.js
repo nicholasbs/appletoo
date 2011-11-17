@@ -66,9 +66,10 @@ test("Accumlator", function() {
 test("Immediate", function() {
   expect(2);
 
-  appleToo.write_memory(appleToo.PC, 0xBB);
+  var addr = appleToo.PC
+  appleToo.write_memory(addr, 0xBB);
 
-  equal(appleToo.immediate(), 0xBB, "AppleToo.immediate should return the argument passed to the opcode");
+  equal(appleToo.immediate(), addr, "AppleToo.immediate should return the program counter");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 

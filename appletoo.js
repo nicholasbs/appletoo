@@ -41,30 +41,61 @@ AppleToo.prototype.run = function(opcode) {
 AppleToo.prototype.immediate = function() {
   return this._read_memory(this.PC++);
 };
-
+//implied addressing mode function unnecessary
 AppleToo.prototype.accumulator = function() {
-  return false;
+  return this.AC;
 };
 AppleToo.prototype.relative = function() {
-  return false;
+  return this.PC + unsigned_to_signed(this._read_memory(this.PC++));
 };
 AppleToo.prototype.zero_page = function() {
-  return false;
+  if (this._read_memory(this.PC) > 0xFF) throw new Error("Zero_Page boundary exceeded");
+  return this._read_memory(this.PC++);
 };
 AppleToo.prototype.zero_page_indexed_with_x = function() {
-  return false;
+  var addr = this._read_memory(this.PC++) + this.XR;
+  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
+  return addr;
 };
 AppleToo.prototype.zero_page_indexed_with_y = function() {
-  return false;
+  var addr = this._read_memory(this.PC++) + this.YR;
+  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
+  return addr;
 };
 AppleToo.prototype.absolute = function() {
-  return false;
+  var addr = this.read_word(this.PC);
+  this.PC += 2;
+  return addr;
 };
 AppleToo.prototype.absolute_indexed_with_x = function() {
-  return false;
+  var addr = this.read_word(this.PC) + this.XR;
+  this.PC += 2;
+  return addr;
 };
 AppleToo.prototype.absolute_indexed_with_y = function() {
-  return false;
+  var addr = this.read_word(this.PC) + this.YR;
+  this.PC += 2;
+  return addr;
+};
+AppleToo.prototype.absolute_indirect = function() {
+  var addr = this.read_word(this.PC);
+  addr = this.read_word(addr);
+  this.PC += 2;
+  return addr;
+};
+AppleToo.prototype.zero_page_indirect_indexed_with_x = function() {
+  var addr = this._read_memory(this.PC++);
+  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
+
+  addr = (addr + this.XR) % 255;
+  return this.read_word(addr);
+};
+AppleToo.prototype.zero_page_indirect_indexed_with_y = function() {
+  var addr = this._read_memory(this.PC++);
+  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
+
+  addr = (addr + this.YR) % 255;
+  return this.read_word(addr);
 };
 
 AppleToo.prototype.print_registers = function() {
@@ -147,7 +178,8 @@ AppleToo.prototype.get_register = function(register) {
 };
 
 AppleToo.prototype.set_register = function(register, val) {
-  return this[register] = parseInt(val, 16);
+  if (typeof val === "string") val = parseInt(val, 16);
+  return this[register] = val;
 };
 
 AppleToo.prototype.get_status_flags = function() {
@@ -590,4 +622,9 @@ function zero_pad(n, len, base) {
   return result;
 }
 
+function unsigned_to_signed(val) {
+  if (val > 255) throw new Error("unsigned_to_signed only works on 1 byte numbers");
+  if (val < 128) return val;
+  return (val - 256);
+}
 // vim: expandtab:ts=2:sw=2

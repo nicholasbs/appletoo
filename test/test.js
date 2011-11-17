@@ -73,7 +73,7 @@ test("Immediate", function() {
 });
 
 test("Relative", function() {
-  expect(2);
+  expect(3);
 
   //Running the function will change the program counter,
   //so we store the value to test before that
@@ -82,85 +82,111 @@ test("Relative", function() {
 
   equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter and its argument");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+
+  testValue = appleToo.PC - 1;
+  appleToo.write_memory(appleToo.PC, 0xFF);
+
+  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter and its argument");
 });
 
 test("Zero Page", function() {
   expect(2);
 
-  appleToo.write_memory(0x01, 0xBB);
   appleToo.write_memory(appleToo.PC, 0x01);
 
-  equal(appleToo.zero_page(), 0xBB, "AppleToo.zero_page should return the value stored at the given zero page address");
+  equal(appleToo.zero_page(), 0x01, "AppleToo.zero_page should return the given zero page address");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 
 test("Zero Page, Indexed With X", function() {
   expect(2);
 
-  appleToo.write_memory(0x02, 0xBB);
   appleToo.write_memory(appleToo.PC, 0x01);
   appleToo.set_register("XR", 0x01);
 
-  equal(appleToo.zero_page_indexed_with_x(), 0xBB, "AppleToo.zero_page_indexed_with_x should return the value at the zero page address equal to the given address plus the value in the X register");
+  equal(appleToo.zero_page_indexed_with_x(), 0x02, "AppleToo.zero_page_indexed_with_x should return the zero page address equal to the given address plus the value in the X register");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 
 test("Zero Page, Indexed With Y", function() {
   expect(2);
 
-  appleToo.write_memory(0x02, 0xBB);
   appleToo.write_memory(appleToo.PC, 0x01);
   appleToo.set_register("YR", 0x01);
 
-  equal(appleToo.zero_page_indexed_with_y(), 0xBB, "AppleToo.zero_page_indexed_with_y should return the value at the zero page address equal to the given address plus the value in the Y register");
+  equal(appleToo.zero_page_indexed_with_y(), 0x02, "AppleToo.zero_page_indexed_with_y should return the zero page address equal to the given address plus the value in the Y register");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 
 test("Absolute", function() {
   expect(2);
 
-  appleToo.write_memory(0x1BBF, 0xBB);
   appleToo.write_memory(appleToo.PC, 0xBF);
   appleToo.write_memory(appleToo.PC+1, 0x1B);
 
-  equal(appleToo.absolute(), 0xBB, "AppleToo.absolute should return the value at the given (two byte) address");
+  equal(appleToo.absolute(), 0x1BBF, "AppleToo.absolute should return the given (two byte) address");
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
 });
 
 test("Absolute, Indexed With X", function() {
   expect(2);
 
-  appleToo.write_memory(0x1BBF, 0xBB);
   appleToo.write_memory(appleToo.PC, 0xBE);
   appleToo.write_memory(appleToo.PC+1, 0x1B);
   appleToo.set_register("XR", 0x01);
 
-  equal(appleToo.absolute_indexed_with_x(), 0xBB, "AppleToo.absolute_indexed_with_x should return the value at the given (two byte) address offset with the value of the X register");
+  equal(appleToo.absolute_indexed_with_x(), 0x1BBF, "AppleToo.absolute_indexed_with_x should return the given (two byte) address offset with the value of the X register");
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
 });
 
 test("Absolute, Indexed With Y", function() {
   expect(2);
 
-  appleToo.write_memory(0x1BBF, 0xBB);
   appleToo.write_memory(appleToo.PC, 0xBE);
   appleToo.write_memory(appleToo.PC+1, 0x1B);
   appleToo.set_register("YR", 0x01);
 
-  equal(appleToo.absolute_indexed_with_y(), 0xBB, "AppleToo.absolute_indexed_with_y should return the value at the given (two byte) address offset with the value of the Y register");
+  equal(appleToo.absolute_indexed_with_y(), 0x1BBF, "AppleToo.absolute_indexed_with_y should return the given (two byte) address offset with the value of the Y register");
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
 });
 
-test("Absolute, Indirect Indexed With X", function() {
+test("Absolute, Indirect", function() {
   expect(2);
 
-  appleToo.write_memory(0x1BBF, 0xBB);
+  appleToo.write_memory(0x1BBF, 0xAB);
+  appleToo.write_memory(0x1BBE, 0xCD);
+
   appleToo.write_memory(appleToo.PC, 0xBE);
   appleToo.write_memory(appleToo.PC+1, 0x1B);
-  appleToo.set_register("XR", 0x01);
 
-  equal(appleToo.absolute_indexed_with_x(), 0xBB, "AppleToo.absolute_indexed_with_x should return the value at the given (two byte) address offset with the value of the X register");
+  equal(appleToo.absolute_indirect(), 0xABCD, "AppleToo.absolute_indirect should return the address formed by reading the low byte at the absolute address and the high byte at the absolute address plus one");
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
+});
+
+test("Zero Page, Indirect, Indexed with X", function() {
+  expect(2);
+
+  appleToo.write_memory(0x00FF, 0xAB);
+  appleToo.write_memory(0x00FE, 0xCD);
+  appleToo.set_register("XR", 0x0E);
+
+  appleToo.write_memory(appleToo.PC, 0xF0);
+
+  equal(appleToo.zero_page_indirect_indexed_with_x(), 0xABCD, "AppleToo.zero_page_indirect_indexed_with_x should return the address formed by reading low byte at the zero page address plus the X register and the high byte at the zero page address plus X register plus one");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
+});
+
+test("Zero Page, Indirect, Indexed with Y", function() {
+  expect(2);
+
+  appleToo.write_memory(0x00FF, 0xAB);
+  appleToo.write_memory(0x00FE, 0xCD);
+  appleToo.set_register("YR", 0x0E);
+
+  appleToo.write_memory(appleToo.PC, 0xF0);
+
+  equal(appleToo.zero_page_indirect_indexed_with_y(), 0xABCD, "AppleToo.zero_page_indirect_indexed_with_y should return the address formed by reading low byte at the zero page address plus the Y register and the high byte at the zero page address plus Y register plus one");
+  equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 
 module("Load and Store", setupTeardown);

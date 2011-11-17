@@ -158,17 +158,6 @@ AppleToo.prototype._write_memory = function(loc, val) {
   }
 };
 
-AppleToo.prototype.get_arg = function(bytes) {
-  bytes = bytes || 1;
-  if (bytes === 1) {
-    return this._read_memory(this.PC++);
-  } else {
-    var ret = this.read_word(this.PC);
-    this.PC += 2;
-    return ret;
-  }
-};
-
 AppleToo.prototype.read_word = function(addr) {
  return this._read_memory(addr) + (this._read_memory(addr + 1) << 8);
 };

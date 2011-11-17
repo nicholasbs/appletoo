@@ -196,47 +196,24 @@ AppleToo.prototype.set_status_flags = function(obj) {
   };
 };
 
-AppleToo.prototype.ldy = function(addr) {
+AppleToo.prototype._ld_register = function(register, addr) {
   // Reset Zero and Negative Flags
   this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
 
-  console.log("Address: ", addr.toString(16));
-  this.YR = this._read_memory(addr);
-  console.log("Val: ", (this._read_memory(addr)).toString(16));
+  this[register] = this._read_memory(addr);
 
   //Set negative flag
-  this.SR |= this.YR & SR_FLAGS["N"];
+  this.SR |= this[register] & SR_FLAGS["N"];
   //Set zero flag
-  if (this.YR === 0) {
+  if (this[register] === 0) {
     this.SR |= SR_FLAGS["Z"];
   }
+
 };
-AppleToo.prototype.ldx = function(addr) {
-  // Reset Zero and Negative Flags
-  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
 
-  this.XR = this._read_memory(addr);
-
-  //Set negative flag
-  this.SR |= this.XR & SR_FLAGS["N"];
-  //Set zero flag
-  if (this.XR === 0) {
-    this.SR |= SR_FLAGS["Z"];
-  }
-};
-AppleToo.prototype.lda = function(addr) {
-  // Reset Zero and Negative Flags
-  this.SR &= (255 - SR_FLAGS["Z"] - SR_FLAGS["N"]);
-
-  this.AC = this._read_memory(addr);
-
-  //Set negative flag
-  this.SR |= this.AC & SR_FLAGS["N"];
-  //Set zero flag
-  if (this.AC === 0) {
-    this.SR |= SR_FLAGS["Z"];
-  }
-};
+AppleToo.prototype.ldy = function(addr) { this._ld_register("YR", addr); };
+AppleToo.prototype.ldx = function(addr) { this._ld_register("XR", addr); };
+AppleToo.prototype.lda = function(addr) { this._ld_register("AC", addr); };
 AppleToo.prototype.stx = function(addr) {
   this._write_memory(addr, this.XR);
 };

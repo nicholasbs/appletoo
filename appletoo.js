@@ -223,6 +223,59 @@ AppleToo.prototype.sty = function(addr) {
 AppleToo.prototype.sta = function(addr) {
   this._write_memory(addr, this.AC);
 };
+AppleToo.prototype.adc = function(addr) {
+  var result = this.AC + this._read_memory(addr) + (this.SR & SR_FLAGS.C);
+
+  if ((this.AC & SR_FLAGS.N) !== (result & SR_FLAGS.N)) {
+    this.SR |= SR_FLAGS.V; //Set Overflow Flag
+  } else {
+    this.SR &= ~SR_FLAGS.V & 0xFF; //Clear Overflow Flag
+  }
+
+  this.SR |= (result & SR_FLAGS.N); //Set Negative Flag
+  if (result & SR_FLAGS.N) {
+    this.SR |= SR_FLAGS.N;
+  } else {
+    this.SR &= ~SR_FLAGS.N & 0xFF;
+  }
+
+  if (result === 0) {
+    this.SR |= SR_FLAGS.Z; //Set Zero Flag
+  } else {
+    this.SR &= ~SR_FLAGS.Z & 0xFF; //Clear Zero Flag
+  }
+
+  if (this.SR & SR_FLAGS.D) {
+    result = to_bcd(from_bcd(this.AC) + from_bcd(this._read_memory(addr)) + (this.SR & SR_FLAGS.C));
+    if (result > 99) {
+      this.SR |= SR_FLAGS.C;
+    } else {
+      this.SR &= ~SR_FLAGS.C & 0xFF;
+    }
+  } else {
+    if (result > 0xFF) {
+      this.SR |= SR_FLAGS.C;
+      result &= 0xFF;
+    } else {
+      this.SR &= ~SR_FLAGS.C & 0xFF;
+    }
+  }
+  this.AC = result;
+};
+function from_bcd(val) {
+  var high = (val & 0xF0) >> 4,
+      low = val & 0x0F;
+  return high * 10 + low;
+}
+function to_bcd(val) {
+  if (val > 99 || val < 0) throw new Error("Bad BCD Value");
+  var digits = val.toString().split("");
+
+  return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
+}
+AppleToo.prototype.sbc = function(addr) {
+  return false;
+};
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };

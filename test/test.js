@@ -9,10 +9,23 @@ var appleToo,
     },
     unset_flags = {N:0, V:0, _:0, B:0, D:0, I:0, Z:0, C:0},
     zero_flag = clone(unset_flags),
-    neg_flag = clone(unset_flags);
+    neg_flag = clone(unset_flags),
+    carry_flag = clone(unset_flags),
+    overflow_neg_flag = clone(unset_flags),
+    overflow_carry_flag = clone(unset_flags),
+    dec_flag = clone(unset_flags),
+    dec_carry_flag = clone(unset_flags);
 
 zero_flag["Z"] = 1;
 neg_flag["N"] = 1;
+carry_flag["C"] = 1;
+overflow_neg_flag["V"] = 1;
+overflow_neg_flag["N"] = 1;
+overflow_carry_flag["V"] = 1;
+overflow_carry_flag["C"] = 1;
+dec_flag["D"] = 1;
+dec_carry_flag["D"] = 1;
+dec_carry_flag["C"] = 1;
 
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -51,6 +64,16 @@ test("set_status_flags", function() {
   expect(1);
   appleToo.set_status_flags({N:1, V:0, _:0, B:0, D:0, I:0, Z:1, C:0});
   equal(appleToo.SR, 130);
+});
+test("to_bcd", function(){
+  expect(1);
+
+  equal(to_bcd(34), parseInt("00110100",2));
+});
+test("from_bcd", function() {
+  expect(1);
+
+  equal(from_bcd(parseInt("00110100",2)), 34);
 });
 
 module("Memory Addressing Modes", setupTeardown);
@@ -626,4 +649,130 @@ test("STY_A", function() {
 
 module("Arithmetic", setupTeardown);
 
+test("ADC", function() {
+  expect(12);
+
+  appleToo.AC = 0x02;
+  appleToo.write_memory(0xABCD, 0x11);
+  appleToo.adc(0xABCD);
+
+  equal(appleToo.AC, 0x13, "Value at address should be added to accumulator");
+  deepEqual(appleToo.get_status_flags(), unset_flags);
+
+  appleToo.AC = 0x01;
+  appleToo.set_status_flags({C:1});
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.adc(0xABCD);
+
+  equal(appleToo.AC, 0x03, "ADC should take into account the carry flag");
+  deepEqual(appleToo.get_status_flags(), unset_flags, "Carry flag should be cleared");
+
+  appleToo.SR = 0;
+  appleToo.AC = to_bcd(30);
+  appleToo.write_memory(0xABCD, to_bcd(20));
+  appleToo.set_status_flags({D:1});
+  appleToo.adc(0xABCD);
+
+  equal(appleToo.AC, to_bcd(50), "ADC should correctly handle BCD");
+  deepEqual(appleToo.get_status_flags(), dec_flag);
+
+  appleToo.AC = to_bcd(35);
+  appleToo.set_status_flags({C:1});
+  appleToo.adc(0xABCD);
+
+  equal(appleToo.AC, to_bcd(56), "ADC should correctly handle BCD with Carry");
+  deepEqual(appleToo.get_status_flags(), dec_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x00;
+  appleToo.adc(0xFFFF);
+
+  deepEqual(appleToo.get_status_flags(), zero_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0xB0;
+  appleToo.write_memory(0xABCD, 0x02);
+  appleToo.adc(0xABCD);
+  console.log(appleToo.AC);
+
+  deepEqual(appleToo.get_status_flags(), neg_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x02;
+  appleToo.write_memory(0xABCD, 0xFF);
+  appleToo.adc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), carry_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x7F;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.adc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), overflow_neg_flag);
+});
+
+test("SBC", function() {
+  expect(12);
+
+  appleToo.AC = 0x11;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
+
+  equal(appleToo.AC, 0x0F, "Value at address should be subtracted from accumulator");
+  deepEqual(appleToo.get_status_flags(), carry_flag);
+
+  appleToo.AC = 0x03;
+  appleToo.set_status_flags({"C":1});
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
+
+  equal(appleToo.AC, 0x01, "SBC should take into account the carry flag");
+  deepEqual(appleToo.get_status_flags(), unset_flags, "Carry flag should be cleared");
+
+  appleToo.SR = 0;
+  appleToo.AC = 10;
+  appleToo.write_memory(0xABCD, 5);
+  appleToo.set_status_flags({D:1});
+  appleToo.sbc(0xABCD);
+
+  equal(appleToo.AC, 4, "SBC should correctly handle BCD");
+  deepEqual(appleToo.get_status_flags(), dec_carry_flag);
+
+  appleToo.AC = 10;
+  appleToo.set_status_flags({C:1, D:1});
+  appleToo.sbc(0xABCD);
+
+  equal(appleToo.AC, 5, "SBC should correctly handle BCD with Carry");
+  deepEqual(appleToo.get_status_flags(), dec_flag);
+
+  appleToo.SR = 0;
+  appleToo.set_status_flags({C:1});
+  appleToo.AC = 0x00;
+  appleToo.sbc(0xFFFF);
+
+  deepEqual(appleToo.get_status_flags(), zero_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x01;
+  appleToo.write_memory(0xABCD, 0x02);
+  appleToo.sbc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), neg_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x02;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), carry_flag);
+
+  appleToo.SR = 0;
+  appleToo.set_status_flags({C:1});
+  appleToo.AC = 0x80;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), overflow_carry_flag);
+});
 // vim: expandtab:ts=2:sw=2

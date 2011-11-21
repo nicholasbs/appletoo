@@ -262,20 +262,48 @@ AppleToo.prototype.adc = function(addr) {
   }
   this.AC = result;
 };
-function from_bcd(val) {
-  var high = (val & 0xF0) >> 4,
-      low = val & 0x0F;
-  return high * 10 + low;
-}
-function to_bcd(val) {
-  if (val > 99 || val < 0) throw new Error("Bad BCD Value");
-  var digits = val.toString().split("");
-
-  return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
-}
 AppleToo.prototype.sbc = function(addr) {
-  return false;
+  var result,
+      borrow = (this.SR & SR_FLAGS.C) ? 0 : 1;
+  if (this.SR & SR_FLAGS.D) {
+    result = from_bcd(this.AC) - from_bcd(this._read_memory(addr)) - borrow;
+    if (result > 99 || result < 0) {
+      this.SR |= SR_FLAGS.V; // Set overflow
+    } else {
+      this.SR &= ~SR_FLAGS.V & 0xFF; // Clear overflow
+    }
+    result = to_bcd(result);
+  } else {
+    result = this.AC - this._read_memory(addr) - borrow;
+    if (result > 0x7F) {
+      this.SR |= SR_FLAGS.V; // Set overflow
+    } else {
+      this.SR &= ~SR_FLAGS.V & 0xFF; // Clear overflow
+    }
+  }
+
+  console.log("result ", result);
+  if (result > 0x7F) {
+    this.SR |= SR_FLAGS.C; // Set carry
+  } else {
+    this.SR &= ~SR_FLAGS.C & 0xFF; // Clear carry
+  }
+
+  if (result & SR_FLAGS.N) {
+    this.SR |= SR_FLAGS.N;
+  } else {
+    this.SR &= ~SR_FLAGS.N & 0xFF;
+  }
+
+  if (result === 0) {
+    this.SR |= SR_FLAGS.Z; //Set Zero Flag
+  } else {
+    this.SR &= ~SR_FLAGS.Z & 0xFF; //Clear Zero Flag
+  }
+
+  this.AC = result;
 };
+
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };
@@ -341,5 +369,20 @@ function unsigned_to_signed(val) {
   if (val > 255) throw new Error("unsigned_to_signed only works on 1 byte numbers");
   if (val < 128) return val;
   return (val - 256);
+}
+
+function from_bcd(val) {
+  var high = (val & 0xF0) >> 4,
+      low = val & 0x0F;
+  return high * 10 + low;
+}
+
+function to_bcd(val) {
+  if (val > 99 || val < 0) throw new Error("Bad BCD Value");
+  if (val < 10) return val;
+
+  var digits = val.toString().split("");
+
+  return ((parseInt(digits[0],10)<<4) + parseInt(digits[1],10)) & 0xFF;
 }
 // vim: expandtab:ts=2:sw=2

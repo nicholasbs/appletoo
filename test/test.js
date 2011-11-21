@@ -715,31 +715,32 @@ test("ADC", function() {
 test("SBC", function() {
   expect(12);
 
+  appleToo.set_status_flags({"C":1});
   appleToo.AC = 0x11;
   appleToo.write_memory(0xABCD, 0x01);
   appleToo.sbc(0xABCD);
 
-  equal(appleToo.AC, 0x0F, "Value at address should be subtracted from accumulator");
+  equal(appleToo.AC, 0x10, "Value at address should be subtracted from accumulator");
   deepEqual(appleToo.get_status_flags(), carry_flag);
 
-  appleToo.AC = 0x03;
-  appleToo.set_status_flags({"C":1});
+  appleToo.SR = 0;
+  appleToo.AC = 0x04;
   appleToo.write_memory(0xABCD, 0x01);
   appleToo.sbc(0xABCD);
 
-  equal(appleToo.AC, 0x01, "SBC should take into account the carry flag");
-  deepEqual(appleToo.get_status_flags(), unset_flags, "Carry flag should be cleared");
+  equal(appleToo.AC, 0x02, "SBC should take into account the carry flag");
+  deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
 
   appleToo.SR = 0;
-  appleToo.AC = 10;
-  appleToo.write_memory(0xABCD, 5);
+  appleToo.AC = to_bcd(25);
+  appleToo.write_memory(0xABCD, to_bcd(5));
   appleToo.set_status_flags({D:1});
   appleToo.sbc(0xABCD);
 
-  equal(appleToo.AC, 4, "SBC should correctly handle BCD");
+  equal(appleToo.AC, to_bcd(19), "SBC should correctly handle BCD");
   deepEqual(appleToo.get_status_flags(), dec_carry_flag);
 
-  appleToo.AC = 10;
+  appleToo.AC = to_bcd(10);
   appleToo.set_status_flags({C:1, D:1});
   appleToo.sbc(0xABCD);
 

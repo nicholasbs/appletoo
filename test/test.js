@@ -775,4 +775,27 @@ test("ADC", function() {
 
   deepEqual(appleToo.get_status_flags(), overflow_carry_flag);
 });*/
+
+module("Increment and Decrement", setupTeardown);
+
+test("Inc/dec register", function() {
+  expect(5);
+
+  appleToo.SR = 0;
+  appleToo.XR = 0;
+  appleToo.modify_register("XR", 1);
+  equal(appleToo.XR, 1, "Should increment register by 1");
+  deepEqual(appleToo.get_status_flags(), unset_flags);
+
+  appleToo.SR = 0;
+  appleToo.XR = 1;
+  appleToo.modify_register("XR", -1);
+  equal(appleToo.XR, 0, "Should decrement register by 1");
+  deepEqual(appleToo.get_status_flags(), zero_flag);
+
+  appleToo.SR = 0;
+  appleToo.XR = 0;
+  appleToo.modify_register("XR", -1);
+  deepEqual(appleToo.get_status_flags(), neg_flag);
+});
 // vim: expandtab:ts=2:sw=2

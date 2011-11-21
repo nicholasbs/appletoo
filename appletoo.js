@@ -202,13 +202,22 @@ AppleToo.prototype._ld_register = function(register, addr) {
 
   this[register] = this._read_memory(addr);
 
-  //Set negative flag
-  this.SR |= this[register] & SR_FLAGS["N"];
-  //Set zero flag
-  if (this[register] === 0) {
-    this.SR |= SR_FLAGS["Z"];
+  this.update_zero_and_neg_flags(this[register]);
+};
+
+AppleToo.prototype.update_zero_and_neg_flags = function(val) {
+  this.SR |= (val & SR_FLAGS.N); // Set negative flag
+  if (val & SR_FLAGS.N) {
+    this.SR |= SR_FLAGS.N;
+  } else {
+    this.SR &= ~SR_FLAGS.N & 0xFF;
   }
 
+  if (val === 0) {
+    this.SR |= SR_FLAGS.Z; //Set zero flag
+  } else {
+    this.SR &= ~SR_FLAGS.Z & 0xFF; //Clear zero flag
+  }
 };
 
 AppleToo.prototype.ldy = function(addr) { this._ld_register("YR", addr); };
@@ -232,18 +241,7 @@ AppleToo.prototype.adc = function(addr) {
     this.SR &= ~SR_FLAGS.V & 0xFF; //Clear Overflow Flag
   }
 
-  this.SR |= (result & SR_FLAGS.N); //Set Negative Flag
-  if (result & SR_FLAGS.N) {
-    this.SR |= SR_FLAGS.N;
-  } else {
-    this.SR &= ~SR_FLAGS.N & 0xFF;
-  }
-
-  if (result === 0) {
-    this.SR |= SR_FLAGS.Z; //Set Zero Flag
-  } else {
-    this.SR &= ~SR_FLAGS.Z & 0xFF; //Clear Zero Flag
-  }
+  this.update_zero_and_neg_flags(result);
 
   if (this.SR & SR_FLAGS.D) {
     result = to_bcd(from_bcd(this.AC) + from_bcd(this._read_memory(addr)) + (this.SR & SR_FLAGS.C));
@@ -262,19 +260,12 @@ AppleToo.prototype.adc = function(addr) {
   }
   this.AC = result;
 };
-function from_bcd(val) {
-  var high = (val & 0xF0) >> 4,
-      low = val & 0x0F;
-  return high * 10 + low;
-}
-function to_bcd(val) {
-  if (val > 99 || val < 0) throw new Error("Bad BCD Value");
-  var digits = val.toString().split("");
-
-  return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
-}
 AppleToo.prototype.sbc = function(addr) {
   return false;
+};
+AppleToo.prototype.modify_register = function(register, val) {
+  this[register] += val;
+  this.update_zero_and_neg_flags(this[register]);
 };
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
@@ -312,6 +303,10 @@ var OPCODES = {
   0x99 : function() { this.sta(this.absolute_indexed_with_y()); this.cycles += 5; },
   0x81 : function() { this.sta(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x91 : function() { this.sta(this.zero_page_indirect_indexed_with_y()); this.cycles += 6; },
+  0xE8 : function() { this.modify_register("XR", 1); this.cycles += 2; },
+  0xC8 : function() { this.modify_register("YR", 1); this.cycles += 2; },
+  0xCA : function() { this.modify_register("XR", -1); this.cycles += 2; },
+  0x88 : function() { this.modify_register("YR", -1); this.cycles += 2; },
   0x00 : function() { this.brk(); }
 };
 
@@ -341,5 +336,18 @@ function unsigned_to_signed(val) {
   if (val > 255) throw new Error("unsigned_to_signed only works on 1 byte numbers");
   if (val < 128) return val;
   return (val - 256);
+}
+
+function from_bcd(val) {
+  var high = (val & 0xF0) >> 4,
+      low = val & 0x0F;
+  return high * 10 + low;
+}
+
+function to_bcd(val) {
+  if (val > 99 || val < 0) throw new Error("Bad BCD Value");
+  var digits = val.toString().split("");
+
+  return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
 }
 // vim: expandtab:ts=2:sw=2

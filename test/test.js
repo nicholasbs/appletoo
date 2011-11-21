@@ -712,7 +712,7 @@ test("ADC", function() {
   deepEqual(appleToo.get_status_flags(), overflow_neg_flag);
 });
 
-test("SBC", function() {
+/*test("SBC", function() {
   expect(12);
 
   appleToo.AC = 0x11;
@@ -774,5 +774,5 @@ test("SBC", function() {
   appleToo.sbc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_carry_flag);
-});
+});*/
 // vim: expandtab:ts=2:sw=2

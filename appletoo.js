@@ -263,9 +263,14 @@ AppleToo.prototype.adc = function(addr) {
 AppleToo.prototype.sbc = function(addr) {
   return false;
 };
-AppleToo.prototype.modify_register = function(register, val) {
+AppleToo.prototype.inc_dec_register = function(register, val) {
   this[register] += val;
   this.update_zero_and_neg_flags(this[register]);
+};
+AppleToo.prototype.inc_dec_memory = function(addr, val) {
+  var result = this._read_memory(addr) + val;
+  this._write_memory(addr, result);
+  this.update_zero_and_neg_flags(result);
 };
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
@@ -303,10 +308,18 @@ var OPCODES = {
   0x99 : function() { this.sta(this.absolute_indexed_with_y()); this.cycles += 5; },
   0x81 : function() { this.sta(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x91 : function() { this.sta(this.zero_page_indirect_indexed_with_y()); this.cycles += 6; },
-  0xE8 : function() { this.modify_register("XR", 1); this.cycles += 2; },
-  0xC8 : function() { this.modify_register("YR", 1); this.cycles += 2; },
-  0xCA : function() { this.modify_register("XR", -1); this.cycles += 2; },
-  0x88 : function() { this.modify_register("YR", -1); this.cycles += 2; },
+  0xE8 : function() { this.inc_dec_register("XR", 1); this.cycles += 2; },
+  0xC8 : function() { this.inc_dec_register("YR", 1); this.cycles += 2; },
+  0xCA : function() { this.inc_dec_register("XR", -1); this.cycles += 2; },
+  0x88 : function() { this.inc_dec_register("YR", -1); this.cycles += 2; },
+  0xE6 : function() { this.inc_dec_memory(this.zero_page(), 1); this.cycles += 5; },
+  0xF6 : function() { this.inc_dec_memory(this.zero_page_indexed_with_x(), 1); this.cycles += 6; },
+  0xEE : function() { this.inc_dec_memory(this.absolute(), 1); this.cycles += 6; },
+  0xFE : function() { this.inc_dec_memory(this.absolute_indexed_with_x(), 1); this.cycles += 7; },
+  0xC6 : function() { this.inc_dec_memory(this.zero_page(), -1); this.cycles += 5; },
+  0xD6 : function() { this.inc_dec_memory(this.zero_page_indexed_with_x(), -1); this.cycles += 6;},
+  0xCE : function() { this.inc_dec_memory(this.absolute(), -1); this.cycles += 6; },
+  0xDE : function() { this.inc_dec_memory(this.absolute_indexed_with_x(), -1); this.cycles += 7; },
   0x00 : function() { this.brk(); }
 };
 

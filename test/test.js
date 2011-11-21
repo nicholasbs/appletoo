@@ -783,19 +783,31 @@ test("Inc/dec register", function() {
 
   appleToo.SR = 0;
   appleToo.XR = 0;
-  appleToo.modify_register("XR", 1);
+  appleToo.inc_dec_register("XR", 1);
   equal(appleToo.XR, 1, "Should increment register by 1");
   deepEqual(appleToo.get_status_flags(), unset_flags);
 
   appleToo.SR = 0;
   appleToo.XR = 1;
-  appleToo.modify_register("XR", -1);
+  appleToo.inc_dec_register("XR", -1);
   equal(appleToo.XR, 0, "Should decrement register by 1");
   deepEqual(appleToo.get_status_flags(), zero_flag);
 
   appleToo.SR = 0;
   appleToo.XR = 0;
-  appleToo.modify_register("XR", -1);
+  appleToo.inc_dec_register("XR", -1);
   deepEqual(appleToo.get_status_flags(), neg_flag);
+});
+
+test("Inc/dec memory", function() {
+  expect(2);
+
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.inc_dec_memory(0xABCD, 1);
+  equal(appleToo._read_memory(0xABCD), 2, "Should increment value at addr by 1");
+
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.inc_dec_memory(0xABCD, -1);
+  equal(appleToo._read_memory(0xABCD), 0, "Should decrement value at addr by 1");
 });
 // vim: expandtab:ts=2:sw=2

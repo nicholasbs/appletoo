@@ -810,4 +810,49 @@ test("Inc/dec memory", function() {
   appleToo.inc_dec_memory(0xABCD, -1);
   equal(appleToo._read_memory(0xABCD), 0, "Should decrement value at addr by 1");
 });
+
+module("Set and Clear", setupTeardown);
+test("Set Flag", function(){
+  expect(8);
+
+  appleToo.SR = 1;
+  appleToo.set_flag("N");
+  equal(appleToo.SR, 129, "set_flag shouldn't clober flags");
+
+  appleToo.SR = 0;
+  appleToo.set_flag("N");
+  equal(appleToo.SR, 128);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("V");
+  equal(appleToo.SR, 64);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("B");
+  equal(appleToo.SR, 16);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("D");
+  equal(appleToo.SR, 8);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("I");
+  equal(appleToo.SR, 4);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("Z");
+  equal(appleToo.SR, 2);
+
+  appleToo.SR = 0;
+  appleToo.set_flag("C");
+  equal(appleToo.SR, 1);
+});
+test("Clear Flag", function() {
+  expect(1);
+
+  appleToo.SR = 3;
+  appleToo.clear_flag("C");
+
+  equal(appleToo.SR, 2);
+});
 // vim: expandtab:ts=2:sw=2

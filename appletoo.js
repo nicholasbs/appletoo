@@ -6,7 +6,7 @@ var AppleToo = function() {
   this.XR = 0;
   this.YR = 0;
   this.SR = 0;
-  this.SP;
+  this.SP = 0xFF;
   this.PC = 0xC000;
 
   this.running = true;
@@ -277,6 +277,16 @@ AppleToo.prototype.set_flag = function(flag) {
 };
 AppleToo.prototype.clear_flag = function(flag) {
   this.SR &= ~SR_FLAGS[flag] & 0xFF;
+};
+AppleToo.prototype.push = function(val) {
+  var addr = (0x0100 + this.SP);
+  this._write_memory(addr, val);
+
+  if (addr <= 0x0100) {
+    this.SP = 0xFF;
+  } else {
+    this.SP--;
+  }
 };
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!

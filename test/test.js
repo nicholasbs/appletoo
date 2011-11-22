@@ -855,4 +855,30 @@ test("Clear Flag", function() {
 
   equal(appleToo.SR, 2);
 });
+
+module("Stack", setupTeardown);
+test("Push", function() {
+  expect(4);
+
+  equal(appleToo.SP, 0xFF, "Stack pointer should be properly initialized");
+
+  appleToo.push(0xAA);
+  equal(appleToo.SP, 0xFE, "Push should decrement the stack pointer by one");
+  equal(appleToo._read_memory(0x01FF), 0xAA, "Value should be on the stack");
+
+  appleToo.SP = 0x00;
+  appleToo.push(0xAA);
+  equal(appleToo.SP, 0xFF, "Stack should wrap around on overflow");
+});
+
+test("Pop", function() {
+  expect(2);
+
+  appleToo.write_memory(0x10FF, 0xAA);
+  appleToo.SP = 0xFE;
+
+  var result = appleToo.pop();
+  equal(result, 0xAA, "Value from top of stack should be returned");
+  equal(appleToo.SP, 0xFF, "Stack Pointer should be incremented");
+});
 // vim: expandtab:ts=2:sw=2

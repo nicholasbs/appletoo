@@ -288,6 +288,22 @@ AppleToo.prototype.push = function(val) {
     this.SP--;
   }
 };
+AppleToo.prototype.pop = function(register) {
+  this.SP++;
+  var addr = (0x0100 + this.SP);
+  this[register] = this._read_memory(addr);
+
+  if (addr >= 0x01FF) {
+    this.SP = 0xFF;
+  }
+};
+
+AppleToo.prototype.transfer_register = function(from, to) {
+  this[to] = this[from];
+  this.cycles += 2;
+  this.PC += 1;
+  this.update_zero_and_neg_flags(this[to]);
+};
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };
@@ -343,6 +359,12 @@ var OPCODES = {
   0xD8 : function() { this.clear_flag("D"); this.cycles += 2; this.PC++; },
   0x58 : function() { this.clear_flag("I"); this.cycles += 2; this.PC++; },
   0xB8 : function() { this.clear_flag("V"); this.cycles += 2; this.PC++; },
+  0xAA : function() { this.transfer_register("AC", "XR"); },
+  0x8A : function() { this.transfer_register("XR", "AC"); },
+  0xA8 : function() { this.transfer_register("AC", "YR"); },
+  0x98 : function() { this.transfer_register("YR", "AC"); },
+  0xBA : function() { this.transfer_register("SP", "XR"); },
+  0x9A : function() { this.transfer_register("XR", "SP"); },
   0x00 : function() { this.brk(); }
 };
 

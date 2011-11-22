@@ -693,7 +693,6 @@ test("ADC", function() {
   appleToo.AC = 0xB0;
   appleToo.write_memory(0xABCD, 0x02);
   appleToo.adc(0xABCD);
-  console.log(appleToo.AC);
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 
@@ -874,11 +873,71 @@ test("Push", function() {
 test("Pop", function() {
   expect(2);
 
-  appleToo.write_memory(0x10FF, 0xAA);
+  appleToo.write_memory(0x01FF, 0xAA);
   appleToo.SP = 0xFE;
 
-  var result = appleToo.pop();
-  equal(result, 0xAA, "Value from top of stack should be returned");
+  appleToo.pop("AC");
+  equal(appleToo.AC, 0xAA, "Value from top of stack should be returned");
   equal(appleToo.SP, 0xFF, "Stack Pointer should be incremented");
+});
+
+module("Transfer", setupTeardown);
+test("transfer_register", function() {
+  appleToo.SR = 0;
+  appleToo.AC = 0x00;
+  appleToo.transfer_register("AC", "XR");
+
+  equal(appleToo.XR, 0x00, "Accumulator should be transfered to X");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+  deepEqual(appleToo.get_status_flags(), zero_flag, "Zero flag should be set");
+
+  appleToo.SR = 0;
+  appleToo.AC = 0xB0;
+  appleToo.transfer_register("AC", "XR");
+
+  deepEqual(appleToo.get_status_flags(), neg_flag, "Neg flag should be set");
+});
+test("TAX", function() {
+  expect(1);
+
+  appleToo.AC = 0xAA;
+  OPCODES[0xAA].call(appleToo);
+  equal(appleToo.XR, 0xAA, "Accumulator should be transfered to X");
+});
+test("TXA", function() {
+  expect(1);
+
+  appleToo.XR = 0xAA;
+  OPCODES[0x8A].call(appleToo);
+  equal(appleToo.AC, 0xAA, "X should be transfered to Accumulator");
+});
+test("TAY", function() {
+  expect(1);
+
+  appleToo.AC = 0xAA;
+  OPCODES[0xA8].call(appleToo);
+  equal(appleToo.YR, 0xAA, "Accumulator should be transfered to Y");
+});
+test("TYA", function() {
+  expect(1);
+
+  appleToo.YR = 0xAA;
+  OPCODES[0x98].call(appleToo);
+  equal(appleToo.AC, 0xAA, "Y should be transfered to Accumulator");
+});
+test("TSX", function() {
+  expect(1);
+
+  appleToo.SP = 0xAA;
+  OPCODES[0xBA].call(appleToo);
+  equal(appleToo.XR, 0xAA, "SP should be transfered to X");
+});
+test("TXS", function() {
+  expect(1);
+
+  appleToo.XR = 0x0100;
+  OPCODES[0x9A].call(appleToo);
+  equal(appleToo.SP, 0x0100, "X should be transfered to SP");
 });
 // vim: expandtab:ts=2:sw=2

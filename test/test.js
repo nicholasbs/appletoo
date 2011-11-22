@@ -968,5 +968,26 @@ test("logic_op", function() {
 
   equal(appleToo.AC, 0x00, "Value in memory should be XORed with AC and put in AC");
   deepEqual(appleToo.get_status_flags(), zero_flag);
-}); 
+});
+
+module("Subroutines and Jump", setupTeardown);
+test("Jump", function() {
+  expect(1);
+
+  appleToo.jump(0xABCD);
+  equal(appleToo.PC, 0xABCD, "Jump should correctly set the PC");
+});
+
+test("JSR", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x20);
+  appleToo.write_memory(appleToo.PC+1, 0xCD);
+  appleToo.write_memory(appleToo.PC+2, 0xAB);
+
+  OPCODES[0x20].call(appleToo);
+
+  equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
+  equal(appleToo.pop_word(), (original_PC+2), "PC should be stored on the stack");
+});
 // vim: expandtab:ts=2:sw=2

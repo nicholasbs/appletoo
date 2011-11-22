@@ -407,6 +407,9 @@ var OPCODES = {
   0x59 : function() { this.logic_op("EOR", this.absolute_indexed_with_y()); this.cycles += 4; },
   0x41 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x51 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x4C : function() { this.jump(this.absolute()); this.cycles += 3; },
+  0x6C : function() { this.jump(this.absolute_indirect()); this.cycles += 5; },
+  0x20 : function() { this.push_word(this.PC + 2); this.jump(this.absolute()); this.cycles += 6; },
   0x00 : function() { this.brk(); }
 };
 

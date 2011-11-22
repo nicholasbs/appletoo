@@ -276,6 +276,7 @@ AppleToo.prototype.transfer_register = function(from, to) {
   this[to] = this[from];
   this.cycles += 2;
   this.PC += 1;
+  this.update_zero_and_neg_flags(this[to]);
 };
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!

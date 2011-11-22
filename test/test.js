@@ -693,7 +693,6 @@ test("ADC", function() {
   appleToo.AC = 0xB0;
   appleToo.write_memory(0xABCD, 0x02);
   appleToo.adc(0xABCD);
-  console.log(appleToo.AC);
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 

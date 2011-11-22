@@ -1,13 +1,17 @@
-var AppleToo = function() {
+var AppleToo = function(options) {
+  options = options || {compatiblity: false};
   // Memory is stored as numbers
   // See: http://jsperf.com/tostring-16-vs-parseint-x-16
   this.memory = [];
-  this.AC = 0; // Registers
+  // Registers
+  this.AC = 0;
   this.XR = 0;
   this.YR = 0;
   this.SR = 0;
   this.SP = 0xFF;
   this.PC = 0xC000;
+
+  this.COMPATIBILITY_MODE = options.compatiblity;
 
   this.running = true;
 
@@ -79,7 +83,11 @@ AppleToo.prototype.absolute_indexed_with_y = function() {
 };
 AppleToo.prototype.absolute_indirect = function() {
   var addr = this.read_word(this.PC);
-  addr = this.read_word(addr);
+  if (this.COMPATIBILITY_MODE && addr | 0x00FF === 0x00FF){
+    addr = this._read_memory(addr) + (this._read_memory(addr & 0xFF00) << 8);
+  } else {
+    addr = this.read_word(addr);
+  }
   this.PC += 2;
   return addr;
 };
@@ -290,12 +298,24 @@ AppleToo.prototype.push = function(val) {
 };
 AppleToo.prototype.pop = function(register) {
   this.SP++;
-  var addr = (0x0100 + this.SP);
-  this[register] = this._read_memory(addr);
+  var addr = (0x0100 + this.SP),
+      val = this._read_memory(addr);
+  if (register !== undefined) this[register] = val;
 
   if (addr >= 0x01FF) {
     this.SP = 0xFF;
   }
+  return val;
+};
+AppleToo.prototype.push_word = function(val) {
+  this.push(val & 0xFF00);
+  this.push(val & 0x00FF);
+};
+AppleToo.prototype.pop_word = function() {
+  var low_byte = this.pop(),
+      high_byte = (this.pop() << 8);
+
+  return low_byte + high_byte;
 };
 
 AppleToo.prototype.transfer_register = function(from, to) {
@@ -317,6 +337,9 @@ AppleToo.prototype.logic_op = function(oper, addr) {
   }
   this.AC = this.AC & 0xFF;
   this.update_zero_and_neg_flags(this.AC);
+};
+AppleToo.prototype.jump = function(addr) {
+  this.PC = addr;
 };
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
@@ -407,6 +430,8 @@ var OPCODES = {
   0x59 : function() { this.logic_op("EOR", this.absolute_indexed_with_y()); this.cycles += 4; },
   0x41 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x51 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x4C : function() { this.jump(this.absolute()); this.cycles += 3; },
+  0x6C : function() { this.jump(this.absolute_indirect()); this.cycles += 5; },
   0x00 : function() { this.brk(); }
 };
 

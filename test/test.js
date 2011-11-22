@@ -810,4 +810,60 @@ test("Inc/dec memory", function() {
   appleToo.inc_dec_memory(0xABCD, -1);
   equal(appleToo._read_memory(0xABCD), 0, "Should decrement value at addr by 1");
 });
+
+module("Transfer", setupTeardown);
+test("TAX", function() {
+  expect(3);
+
+  appleToo.AC = 0xAA;
+  OPCODES[0xAA].call(appleToo);
+  equal(appleToo.XR, 0xAA, "Accumulator should be transfered to X");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
+test("TXA", function() {
+  expect(3);
+
+  appleToo.XR = 0xAA;
+  OPCODES[0x8A].call(appleToo);
+  equal(appleToo.AC, 0xAA, "X should be transfered to Accumulator");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
+test("TAY", function() {
+  expect(3);
+
+  appleToo.AC = 0xAA;
+  OPCODES[0xA8].call(appleToo);
+  equal(appleToo.YR, 0xAA, "Accumulator should be transfered to Y");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
+test("TYA", function() {
+  expect(3);
+
+  appleToo.YR = 0xAA;
+  OPCODES[0x98].call(appleToo);
+  equal(appleToo.AC, 0xAA, "Y should be transfered to Accumulator");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
+test("TSX", function() {
+  expect(3);
+
+  appleToo.SP = 0xAA;
+  OPCODES[0xBA].call(appleToo);
+  equal(appleToo.XR, 0xAA, "SP should be transfered to X");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
+test("TXS", function() {
+  expect(3);
+
+  appleToo.XR = 0x0100;
+  OPCODES[0x9A].call(appleToo);
+  equal(appleToo.SP, 0x0100, "X should be transfered to SP");
+  equal(appleToo.cycles, 2, "Should take 2 cycles");
+  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
+});
 // vim: expandtab:ts=2:sw=2

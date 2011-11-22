@@ -304,6 +304,20 @@ AppleToo.prototype.transfer_register = function(from, to) {
   this.PC += 1;
   this.update_zero_and_neg_flags(this[to]);
 };
+AppleToo.prototype.logic_op = function(oper, addr) {
+  switch (oper) { // TODO: I hate this. I want to pass operators as functions!
+    case "AND":
+      this.AC = this.AC & this._read_memory(addr);
+      break;
+    case "ORA":
+      this.AC = this.AC | this._read_memory(addr);
+      break;
+    case "EOR":
+      this.AC = this.AC ^ this._read_memory(addr);
+  }
+  this.AC = this.AC & 0xFF;
+  this.update_zero_and_neg_flags(this.AC);
+};
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };
@@ -369,6 +383,30 @@ var OPCODES = {
   0x08 : function() { this.push(this.SR); this.update_zero_and_neg_flags(this.SR); this.cycles += 3; this.PC++; },
   0x68 : function() { this.pop("AC"); this.update_zero_and_neg_flags(this.AC); this.cycles += 4; this.PC++; },
   0x28 : function() { this.pop("SR"); this.update_zero_and_neg_flags(this.SR); this.cycles += 4; this.PC++; },
+  0x29 : function() { this.logic_op("AND", this.immediate()); this.cycles += 2; },
+  0x25 : function() { this.logic_op("AND", this.zero_page()); this.cycles += 3; },
+  0x35 : function() { this.logic_op("AND", this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0x2D : function() { this.logic_op("AND", this.absolute()); this.cycles += 4; },
+  0x3D : function() { this.logic_op("AND", this.absolute_indexed_with_x()); this.cycles += 4; },
+  0x39 : function() { this.logic_op("AND", this.absolute_indexed_with_y()); this.cycles += 4; },
+  0x21 : function() { this.logic_op("AND", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0x31 : function() { this.logic_op("AND", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x09 : function() { this.logic_op("ORA", this.immediate()); this.cycles += 2; },
+  0x05 : function() { this.logic_op("ORA", this.zero_page()); this.cycles += 3; },
+  0x15 : function() { this.logic_op("ORA", this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0x0D : function() { this.logic_op("ORA", this.absolute()); this.cycles += 4; },
+  0x1D : function() { this.logic_op("ORA", this.absolute_indexed_with_x()); this.cycles += 4; },
+  0x19 : function() { this.logic_op("ORA", this.absolute_indexed_with_y()); this.cycles += 4; },
+  0x01 : function() { this.logic_op("ORA", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0x11 : function() { this.logic_op("ORA", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x49 : function() { this.logic_op("EOR", this.immediate()); this.cycles += 2; },
+  0x45 : function() { this.logic_op("EOR", this.zero_page()); this.cycles += 3; },
+  0x55 : function() { this.logic_op("EOR", this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0x4D : function() { this.logic_op("EOR", this.absolute()); this.cycles += 4; },
+  0x5D : function() { this.logic_op("EOR", this.absolute_indexed_with_x()); this.cycles += 4; },
+  0x59 : function() { this.logic_op("EOR", this.absolute_indexed_with_y()); this.cycles += 4; },
+  0x41 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0x51 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
   0x00 : function() { this.brk(); }
 };
 

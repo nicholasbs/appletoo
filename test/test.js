@@ -940,4 +940,33 @@ test("TXS", function() {
   OPCODES[0x9A].call(appleToo);
   equal(appleToo.SP, 0x0100, "X should be transfered to SP");
 });
+
+module("Logic", setupTeardown);
+test("logic_op", function() {
+  expect(6);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x01;
+  appleToo.write_memory(0xABCD, 0x03);
+  appleToo.logic_op("AND", 0xABCD);
+
+  equal(appleToo.AC, 0x01, "Value in memory should be ANDed with AC and put in AC");
+  deepEqual(appleToo.get_status_flags(), unset_flags);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0xB0;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.logic_op("ORA", 0xABCD);
+
+  equal(appleToo.AC, 0xB1, "Value in memory should be ORed with AC and put in AC");
+  deepEqual(appleToo.get_status_flags(), neg_flag);
+
+  appleToo.SR = 0;
+  appleToo.AC = 0x01;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.logic_op("EOR", 0xABCD);
+
+  equal(appleToo.AC, 0x00, "Value in memory should be XORed with AC and put in AC");
+  deepEqual(appleToo.get_status_flags(), zero_flag);
+}); 
 // vim: expandtab:ts=2:sw=2

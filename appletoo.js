@@ -365,6 +365,10 @@ var OPCODES = {
   0x98 : function() { this.transfer_register("YR", "AC"); },
   0xBA : function() { this.transfer_register("SP", "XR"); },
   0x9A : function() { this.transfer_register("XR", "SP"); },
+  0x48 : function() { this.push(this.AC); this.update_zero_and_neg_flags(this.AC); this.cycles += 3; this.PC++; },
+  0x08 : function() { this.push(this.SR); this.update_zero_and_neg_flags(this.SR); this.cycles += 3; this.PC++; },
+  0x68 : function() { this.pop("AC"); this.update_zero_and_neg_flags(this.AC); this.cycles += 4; this.PC++; },
+  0x28 : function() { this.pop("SR"); this.update_zero_and_neg_flags(this.SR); this.cycles += 4; this.PC++; },
   0x00 : function() { this.brk(); }
 };
 

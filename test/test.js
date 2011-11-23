@@ -175,16 +175,26 @@ test("Absolute, Indexed With Y", function() {
 });
 
 test("Absolute, Indirect", function() {
-  expect(2);
+  expect(3);
 
-  appleToo.write_memory(0x1BBF, 0xAB);
-  appleToo.write_memory(0x1BBE, 0xCD);
+  appleToo.write_memory(0x1C00, 0xAB); //65C02 Functionality
+  appleToo.write_memory(0x1BFF, 0xCD);
 
-  appleToo.write_memory(appleToo.PC, 0xBE);
+  appleToo.write_memory(appleToo.PC, 0xFF);
   appleToo.write_memory(appleToo.PC+1, 0x1B);
 
   equal(appleToo.absolute_indirect(), 0xABCD, "AppleToo.absolute_indirect should return the address formed by reading the low byte at the absolute address and the high byte at the absolute address plus one");
   equal(appleToo.PC, 0xC002, "Program Counter should be increased by 2");
+
+  appleToo.COMPATIBILITY_MODE = true;
+
+  appleToo.write_memory(0x1BFF, 0xCD); //Broken 6502 Functionality
+  appleToo.write_memory(0x1B00, 0xAB);
+
+  appleToo.write_memory(appleToo.PC, 0xFF);
+  appleToo.write_memory(appleToo.PC+1, 0x1B);
+
+  equal(appleToo.absolute_indirect(), 0xABCD, "Absolute Indirect should follow the original 6502 bug when we're in COMPATIBILITY_MODE");
 });
 
 test("Zero Page, Indirect, Indexed with X", function() {
@@ -977,7 +987,6 @@ test("Jump", function() {
   appleToo.jump(0xABCD);
   equal(appleToo.PC, 0xABCD, "Jump should correctly set the PC");
 });
-
 test("JSR", function() {
   expect(2);
   var original_PC = appleToo.PC;

@@ -33,6 +33,15 @@ function clone(obj) {
 
 //TODO: Make this less hacky and awful
 function test_status_after(appleToo, program, expected_SR) {
+  var opcode = parseInt(program.substr(0,2), 16);
+  program = program.substr(2).replace(" ", "");
+  if (program.length > 2) {
+    appleToo.write_memory(appleToo.PC, parseInt(program.substr(0,2), 16));
+    appleToo.write_memory(appleToo.PC+1, parseInt(program.substr(2,2), 16));
+  } else {
+    appleToo.write_memory(appleToo.PC, parseInt(program.substr(0,2), 16));
+  }
+
   var test_string = "flag(s) should be set";
   for (var k in expected_SR) {
     if (expected_SR[k] === 1) {
@@ -40,7 +49,7 @@ function test_status_after(appleToo, program, expected_SR) {
     }
   }
   test_string = test_string.replace(", flag", " flag");
-  appleToo.run6502(program);
+  OPCODES[opcode].call(appleToo);
   deepEqual(appleToo.get_status_flags(), expected_SR, test_string);
 }
 
@@ -227,7 +236,9 @@ module("Load and Store", setupTeardown);
 test("LDY_I", function() {
   expect(5);
 
-  appleToo.run6502("A0 0F");
+  appleToo.write_memory(appleToo.PC, 0x0F);
+  OPCODES[0xA0].call(appleToo);
+
   equal(appleToo.get_register("YR"), "0F", "Argument should be loaded into Register Y");
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
@@ -239,35 +250,37 @@ test("LDY_I", function() {
 test("LDY_ZP", function() {
   expect(5);
 
-  appleToo.write_memory("0F", "11");
+  appleToo.write_memory(0x0F, 0x11);
+  appleToo.write_memory(appleToo.PC, 0x0F);
 
-  appleToo.run6502("A4 0F");
-  equal(appleToo.get_register("YR"), "11", "Value from Zero Page Memory should be loaded into Register Y");
+  OPCODES[0xA4].call(appleToo);
+  equal(appleToo.YR, 0x11, "Value from Zero Page Memory should be loaded into Register Y");
   equal(appleToo.cycles, 3, "Should take 3 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  appleToo.write_memory("0F", "00");
+  appleToo.write_memory(0x0F, 0x00);
   test_status_after(appleToo, "A4 0F", zero_flag);
 
-  appleToo.write_memory("0F", "FF");
+  appleToo.write_memory(0x0F, 0xFF);
   test_status_after(appleToo, "A4 0F", neg_flag);
 });
 
 test("LDY_ZPX", function() {
   expect(5);
 
-  appleToo.set_register("XR", "01");
-  appleToo.write_memory("03", "0F");
+  appleToo.XR = 0x01;
+  appleToo.write_memory(0x03, 0x0F);
+  appleToo.write_memory(appleToo.PC, 0x02);
 
-  appleToo.run6502("B4 02");
-  equal(appleToo.get_register("YR"), "0F", "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Register Y");
+  OPCODES[0xB4].call(appleToo);
+  equal(appleToo.YR, 0x0F, "Value at Memory location (Zero Page Arg + value in Register X) should be loaded into Register Y");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  appleToo.write_memory("03", "00");
+  appleToo.write_memory(0x03, 0x00);
   test_status_after(appleToo, "B4 02", zero_flag);
 
-  appleToo.write_memory("03", "FF");
+  appleToo.write_memory(0x03, 0xFF);
   test_status_after(appleToo, "B4 02", neg_flag);
 });
 
@@ -275,40 +288,48 @@ test("LDY_A", function() {
   expect(5);
 
   appleToo.write_memory("ABCD", "11");
-  appleToo.run6502("AC CD AB");
-  equal(appleToo.get_register("YR"), "11", "Value at 2-byte argument should be loaded into Register Y");
+  appleToo.write_memory(appleToo.PC, 0xCD);
+  appleToo.write_memory(appleToo.PC+1, 0xAB);
+
+  OPCODES[0xAC].call(appleToo);
+  equal(appleToo.YR, 0x11, "Value at 2-byte argument should be loaded into Register Y");
   equal(appleToo.cycles, 4, "Should take 4 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  appleToo.write_memory("ABCD", "00");
+  appleToo.write_memory(0xABCD, 0x00);
   test_status_after(appleToo, "AC CD AB", zero_flag);
 
-  appleToo.write_memory("ABCD", "FF");
+  appleToo.write_memory(0xABCD, 0xFF);
   test_status_after(appleToo, "AC CD AB", neg_flag);
 });
 
 test("LDY_AX", function() {
   expect(5);
 
-  appleToo.write_memory("AABB", "11");
-  appleToo.set_register("XR", "BB");
-  appleToo.run6502("BC 00 AA");
-  equal(appleToo.get_register("YR"), "11", "Value at memory location (absolute arg + value at Register X) should be loaded into Register Y");
+  appleToo.write_memory(0xAABB, 0x11);
+  appleToo.XR = 0xBB;
+  appleToo.write_memory(appleToo.PC, 0x00);
+  appleToo.write_memory(appleToo.PC+1, 0xAA);
+
+  OPCODES[0xBC].call(appleToo);
+  equal(appleToo.YR, 0x11, "Value at memory location (absolute arg + value at Register X) should be loaded into Register Y");
   equal(appleToo.cycles, 4, "Should take 4 cycles if no page boundary crossed");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  appleToo.write_memory("AABB", "00");
+  appleToo.write_memory(0xAABB, 0x00);
   test_status_after(appleToo, "BC 00 AA", zero_flag);
 
-  appleToo.write_memory("AABB", "FF");
+  appleToo.write_memory(0xAABB, 0xFF);
   test_status_after(appleToo, "BC 00 AA", neg_flag);
 });
 
 test("LDX_I", function() {
   expect(5);
 
-  appleToo.run6502("A2 11");
-  equal(appleToo.get_register("XR"), "11", "Argument should be loaded into Register X");
+  appleToo.write_memory(appleToo.PC, 0x11);
+
+  OPCODES[0xA2].call(appleToo);
+  equal(appleToo.XR, 0x11, "Argument should be loaded into Register X");
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
@@ -319,25 +340,26 @@ test("LDX_I", function() {
 test("LDX_ZP", function() {
   expect(5);
 
-  appleToo.write_memory("0F", "11");
+  appleToo.write_memory(0x0F, 0x11);
+  appleToo.write_memory(appleToo.PC, 0x0F);
 
-  appleToo.run6502("A6 0F");
-  equal(appleToo.get_register("XR"), "11", "Value from Zero Page Memory should be loaded into Register X");
+  OPCODES[0xA6].call(appleToo);
+  equal(appleToo.XR, 0x11, "Value from Zero Page Memory should be loaded into Register X");
   equal(appleToo.cycles, 3, "Should take 3 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 
-  appleToo.write_memory("0F", "00");
+  appleToo.write_memory(0x0F, 0x00);
   test_status_after(appleToo, "A6 0F", zero_flag);
 
-  appleToo.write_memory("0F", "FF");
+  appleToo.write_memory(0x0F, 0xFF);
   test_status_after(appleToo, "A6 0F", neg_flag);
 });
 
 test("LDX_ZPY", function() {
   expect(5);
 
-  appleToo.set_register("YR", "01");
-  appleToo.write_memory("03", "0F");
+  appleToo.YR = 0x01;
+  appleToo.write_memory(0x03, 0x0F);
 
   appleToo.run6502("B6 02");
   equal(appleToo.get_register("XR"), "0F", "Value at Memory location (Zero Page Arg + value in Register Y) should be loaded into Register X");
@@ -1158,5 +1180,29 @@ test("BVS", function() {
   OPCODES[0x70].call(appleToo);
 
   equal(appleToo.PC, original_PC+1, "Should not branch since overflow is clear");
+});
+
+module("Misc", setupTeardown);
+test("NOP", function() {
+  expect(1);
+  var original_PC = appleToo.PC;
+
+  OPCODES[0xEA].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should increment the PC");
+});
+test("BRK", function() {
+  expect(4);
+
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(0xFFFF, 0xAB); // High byte
+  appleToo.write_memory(0xFFFE, 0xCD); // Low byte
+
+  OPCODES[0x00].call(appleToo);
+
+  equal(appleToo.PC, 0xABCD, "PC should be set to value at IRQ/BRK vector address");
+  equal(appleToo.pop(), SR_FLAGS.I + SR_FLAGS.B, "SR should be stored on the stack");
+  equal(appleToo.pop_word(), original_PC+1, "PC+1 should be stored on the stack");
+  equal(appleToo.cycles, 7, "Should take 7 cycles");
 });
 // vim: expandtab:ts=2:sw=2

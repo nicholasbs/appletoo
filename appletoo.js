@@ -346,6 +346,10 @@ AppleToo.prototype.jump = function(addr) {
 AppleToo.prototype.rts = function() {
   this.PC = this.pop_word() + 1;
 };
+AppleToo.prototype.rti = function() {
+  this.pop("SR" );
+  this.PC = this.pop_word();
+};
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };
@@ -439,6 +443,7 @@ var OPCODES = {
   0x6C : function() { this.jump(this.absolute_indirect()); this.cycles += 5; },
   0x20 : function() { this.push_word(this.PC + 1); this.jump(this.absolute()); this.cycles += 6; },
   0x60 : function() { this.rts(this.immediate()); this.cycles += 6; },
+  0x40 : function() { this.rti(); this.cycles += 6; },
   0x00 : function() { this.brk(); }
 };
 

@@ -1008,4 +1008,15 @@ test("RTS", function() {
   equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
   equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
+test("RTI", function() {
+  expect(3);
+  appleToo.push_word(0xABCD); // Interrupt will have pushed the previous PC
+  appleToo.push(0x03); // Interrupt will have pushed previous SR
+
+  OPCODES[0x40].call(appleToo);
+
+  equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
+  equal(appleToo.SR, 0x03, "SR should be pulled from stack");
+  equal(appleToo.cycles, 6, "Should take 6 cycles");
+});
 // vim: expandtab:ts=2:sw=2

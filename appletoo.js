@@ -290,7 +290,7 @@ AppleToo.prototype.push = function(val) {
   var addr = (0x0100 + this.SP);
   this._write_memory(addr, val);
 
-  if (addr <= 0x0100) {
+  if (this.SP <= 0x00) {
     this.SP = 0xFF;
   } else {
     this.SP--;
@@ -308,14 +308,16 @@ AppleToo.prototype.pop = function(register) {
   return val;
 };
 AppleToo.prototype.push_word = function(val) {
-  this.push(val & 0xFF00);
-  this.push(val & 0x00FF);
+  var low_byte = val & 0x00FF,
+      high_byte = (val & 0xFF00) >> 8;
+  this.push(high_byte);
+  this.push(low_byte);
 };
 AppleToo.prototype.pop_word = function() {
   var low_byte = this.pop(),
       high_byte = (this.pop() << 8);
 
-  return low_byte + high_byte;
+  return low_byte | high_byte;
 };
 
 AppleToo.prototype.transfer_register = function(from, to) {
@@ -432,6 +434,7 @@ var OPCODES = {
   0x51 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
   0x4C : function() { this.jump(this.absolute()); this.cycles += 3; },
   0x6C : function() { this.jump(this.absolute_indirect()); this.cycles += 5; },
+  0x20 : function() { this.push_word(this.PC + 1); this.jump(this.absolute()); this.cycles += 6; },
   0x00 : function() { this.brk(); }
 };
 

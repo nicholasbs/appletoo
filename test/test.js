@@ -55,11 +55,6 @@ function test_status_after(appleToo, program, expected_SR) {
 
 
 module("Helper functions", setupTeardown);
-test("get_register", function() {
-  expect(1);
-  appleToo.XR = 1;
-  equal(appleToo.get_register("XR"), "01");
-});
 test("set_register", function() {
   expect(1);
   appleToo.set_register("XR", "01");
@@ -239,7 +234,7 @@ test("LDY_I", function() {
   appleToo.write_memory(appleToo.PC, 0x0F);
   OPCODES[0xA0].call(appleToo);
 
-  equal(appleToo.get_register("YR"), "0F", "Argument should be loaded into Register Y");
+  equal(appleToo.YR, 0x0F, "Argument should be loaded into Register Y");
   equal(appleToo.cycles, 2, "Should take 2 cycles");
   deepEqual(appleToo.get_status_flags(), unset_flags, "No flags should be set");
 

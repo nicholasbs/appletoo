@@ -170,10 +170,6 @@ AppleToo.prototype.read_word = function(addr) {
  return this._read_memory(addr) + (this._read_memory(addr + 1) << 8);
 };
 
-AppleToo.prototype.get_register = function(register) {
-  return zero_pad(this[register]);
-};
-
 AppleToo.prototype.set_register = function(register, val) {
   if (typeof val === "string") val = parseInt(val, 16);
   return this[register] = val;

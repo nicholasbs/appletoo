@@ -157,8 +157,8 @@ AppleToo.prototype._write_memory = function(loc, val) {
   if (val <= 255) {
     this.memory[loc] = val;
   } else if (val <= 65535) {
-    var high_byte = val & 65280,
-        low_byte = val & 255;
+    var high_byte = (val & 0xFF00) >> 8,
+        low_byte = val & 0x00FF;
     this.memory[loc] = low_byte;
     this.memory[loc+1] = high_byte;
   } else {

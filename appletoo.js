@@ -157,8 +157,8 @@ AppleToo.prototype._write_memory = function(loc, val) {
   if (val <= 255) {
     this.memory[loc] = val;
   } else if (val <= 65535) {
-    var high_byte = val & 65280,
-        low_byte = val & 255;
+    var high_byte = (val & 0xFF00) >> 8,
+        low_byte = val & 0x00FF;
     this.memory[loc] = low_byte;
     this.memory[loc+1] = high_byte;
   } else {
@@ -363,7 +363,16 @@ AppleToo.prototype.branch_flag_clear = function(flag) {
   }
 };
 AppleToo.prototype.brk = function() {
-  this.running = false; //TODO Implement properly!
+  this.running = false;
+  this.cycles += 7;
+
+  this.SR |= SR_FLAGS.I;
+  this.SR |= SR_FLAGS.B;
+
+  this.push_word(this.PC + 1);
+  this.push(this.SR);
+
+  this.PC = this.read_word(0xFFFE);
 };
 
 var OPCODES = {
@@ -464,6 +473,7 @@ var OPCODES = {
   0x30 : function() { this.branch_flag_set("N"); },
   0x50 : function() { this.branch_flag_clear("V"); },
   0x70 : function() { this.branch_flag_set("V"); },
+  0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };
 

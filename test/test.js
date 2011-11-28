@@ -988,7 +988,7 @@ test("Jump", function() {
   equal(appleToo.PC, 0xABCD, "Jump should correctly set the PC");
 });
 test("JSR", function() {
-  expect(2);
+  expect(3);
   var original_PC = appleToo.PC;
   appleToo.write_memory(appleToo.PC, 0xCD);
   appleToo.write_memory(appleToo.PC+1, 0xAB);
@@ -997,13 +997,15 @@ test("JSR", function() {
 
   equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
   equal(appleToo.pop_word(), original_PC+1, "PC should be stored on the stack");
+  equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
 test("RTS", function() {
-  expect(1);
+  expect(2);
   appleToo.push_word(0xABCD - 1); // JSR will have pushed the previous PC - 1
 
   OPCODES[0x60].call(appleToo);
 
   equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
+  equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
 // vim: expandtab:ts=2:sw=2

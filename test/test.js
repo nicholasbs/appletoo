@@ -996,6 +996,14 @@ test("JSR", function() {
   OPCODES[0x20].call(appleToo);
 
   equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
-  equal(appleToo.pop_word(), (original_PC+1), "PC should be stored on the stack");
+  equal(appleToo.pop_word(), original_PC+1, "PC should be stored on the stack");
+});
+test("RTS", function() {
+  expect(1);
+  appleToo.push_word(0xABCD - 1); // JSR will have pushed the previous PC - 1
+
+  OPCODES[0x60].call(appleToo);
+
+  equal(appleToo.PC, 0xABCD, "Program counter should be correctly set");
 });
 // vim: expandtab:ts=2:sw=2

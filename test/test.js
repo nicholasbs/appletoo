@@ -1247,4 +1247,24 @@ test("BRK", function() {
   equal(appleToo.pop_word(), original_PC+1, "PC+1 should be stored on the stack");
   equal(appleToo.cycles, 7, "Should take 7 cycles");
 });
+
+module("Shift and Rotate", setupTeardown);
+test("LSR", function() {
+  expect(4);
+
+  appleToo.AC = 0xCD; // 0b11001101
+
+  appleToo.lsr();
+
+  equal(appleToo.AC, 0x66, "Should shift AC right one bit");
+  deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
+
+  appleToo.SR = 0;
+  appleToo.write_memory(0xABCD, 0xCD);
+
+  appleToo.lsr(0xABCD);
+
+  equal(appleToo._read_memory(0xABCD), 0x66, "Should shift memory right one bit");
+  deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
+});
 // vim: expandtab:ts=2:sw=2

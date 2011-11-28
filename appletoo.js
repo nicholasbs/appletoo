@@ -370,6 +370,25 @@ AppleToo.prototype.brk = function() {
 
   this.PC = this.read_word(0xFFFE);
 };
+AppleToo.prototype.lsr = function(addr) {
+  var val, new_val;
+  if (addr !== undefined) {
+    val = this._read_memory(addr);
+  } else {
+    val = this.AC;
+  }
+
+  new_val = val >> 1;
+
+  this.SR |= val & SR_FLAGS.C;
+
+  if (addr !== undefined) {
+    this.write_memory(addr, new_val);
+  } else {
+    this.AC = new_val;
+  }
+  this.update_zero_and_neg_flags(new_val);
+};
 
 var OPCODES = {
   0xA0 : function() { this.ldy(this.immediate()); this.cycles += 2; },

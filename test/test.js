@@ -1019,4 +1019,144 @@ test("RTI", function() {
   equal(appleToo.SR, 0x03, "SR should be pulled from stack");
   equal(appleToo.cycles, 6, "Should take 6 cycles");
 });
+
+module("Branch", setupTeardown);
+// TODO Handle cycles correctly (depends on page boundaries:
+// http://e-tradition.net/bytes/6502/6502_instruction_set.html)
+test("BCC", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = 0;
+
+  OPCODES[0x90].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since carry is clear");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = SR_FLAGS.C;
+
+  OPCODES[0x90].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since carry is set");
+});
+test("BCS", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = SR_FLAGS.C;
+
+  OPCODES[0xB0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since carry is set");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = 0;
+
+  OPCODES[0xB0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since carry is clear");
+});
+test("BEQ", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = SR_FLAGS.Z;
+
+  OPCODES[0xF0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since zero is set");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = 0;
+
+  OPCODES[0xF0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since zero is clear");
+});
+test("BNE", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = 0;
+
+  OPCODES[0xD0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since zero is clear");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = SR_FLAGS.Z;
+
+  OPCODES[0xD0].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since zero is set");
+});
+test("BMI", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = SR_FLAGS.N;
+
+  OPCODES[0x30].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since negative is set");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = 0;
+
+  OPCODES[0x30].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since negative is clear");
+});
+test("BPL", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = 0;
+
+  OPCODES[0x10].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since negative is clear");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = SR_FLAGS.N;
+
+  OPCODES[0x10].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since negative is set");
+});
+test("BVC", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = 0;
+
+  OPCODES[0x50].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since overflow is clear");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = SR_FLAGS.V;
+
+  OPCODES[0x50].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since overflow is set");
+});
+test("BVS", function() {
+  expect(2);
+  var original_PC = appleToo.PC;
+  appleToo.write_memory(appleToo.PC, 0x04);
+  appleToo.SR = SR_FLAGS.V;
+
+  OPCODES[0x70].call(appleToo);
+
+  equal(appleToo.PC, original_PC+0x04, "Should branch since overflow is set");
+
+  appleToo.PC = original_PC;
+  appleToo.SR = 0;
+
+  OPCODES[0x70].call(appleToo);
+
+  equal(appleToo.PC, original_PC+1, "Should not branch since overflow is clear");
+});
 // vim: expandtab:ts=2:sw=2

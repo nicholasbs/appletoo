@@ -350,6 +350,18 @@ AppleToo.prototype.rti = function() {
   this.pop("SR" );
   this.PC = this.pop_word();
 };
+AppleToo.prototype.branch_flag_set = function(flag) {
+  var addr = this.relative();
+  if ((this.SR & SR_FLAGS[flag]) === SR_FLAGS[flag]) {
+    this.PC = addr;
+  }
+};
+AppleToo.prototype.branch_flag_clear = function(flag) {
+  var addr = this.relative();
+  if ((this.SR & SR_FLAGS[flag]) === 0) {
+    this.PC = addr;
+  }
+};
 AppleToo.prototype.brk = function() {
   this.running = false; //TODO Implement properly!
 };
@@ -444,6 +456,14 @@ var OPCODES = {
   0x20 : function() { this.push_word(this.PC + 1); this.jump(this.absolute()); this.cycles += 6; },
   0x60 : function() { this.rts(this.immediate()); this.cycles += 6; },
   0x40 : function() { this.rti(); this.cycles += 6; },
+  0x90 : function() { this.branch_flag_clear("C"); },
+  0xB0 : function() { this.branch_flag_set("C"); },
+  0xF0 : function() { this.branch_flag_set("Z"); },
+  0xD0 : function() { this.branch_flag_clear("Z"); },
+  0x10 : function() { this.branch_flag_clear("N"); },
+  0x30 : function() { this.branch_flag_set("N"); },
+  0x50 : function() { this.branch_flag_clear("V"); },
+  0x70 : function() { this.branch_flag_set("V"); },
   0x00 : function() { this.brk(); }
 };
 

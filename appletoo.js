@@ -370,7 +370,8 @@ AppleToo.prototype.brk = function() {
 
   this.PC = this.read_word(0xFFFE);
 };
-AppleToo.prototype.lsr = function(addr) {
+
+AppleToo.prototype.shift = function(dir, addr) {
   var val, new_val;
   if (addr !== undefined) {
     val = this._read_memory(addr);
@@ -378,9 +379,16 @@ AppleToo.prototype.lsr = function(addr) {
     val = this.AC;
   }
 
-  new_val = val >> 1;
-
-  this.SR |= val & SR_FLAGS.C;
+  if (dir.toLowerCase() === "left") {
+    new_val = (val << 1) & 0xFF;
+    this.SR &= (~SR_FLAGS.C) & 0xFF;
+    this.SR |= (val & 128) >> 7; //Get bit 7 (carry)
+  } else if (dir.toLowerCase() === "right") {
+    new_val = val >> 1;
+    this.SR |= val & SR_FLAGS.C;
+  } else {
+    throw new Error("Invalid shift direction");
+  }
 
   if (addr !== undefined) {
     this.write_memory(addr, new_val);

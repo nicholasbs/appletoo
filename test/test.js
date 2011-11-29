@@ -14,7 +14,8 @@ var appleToo,
     overflow_neg_flag = clone(unset_flags),
     overflow_carry_flag = clone(unset_flags),
     dec_flag = clone(unset_flags),
-    dec_carry_flag = clone(unset_flags);
+    dec_carry_flag = clone(unset_flags),
+    carry_neg_flag = clone(unset_flags);
 
 zero_flag["Z"] = 1;
 neg_flag["N"] = 1;
@@ -26,6 +27,8 @@ overflow_carry_flag["C"] = 1;
 dec_flag["D"] = 1;
 dec_carry_flag["D"] = 1;
 dec_carry_flag["C"] = 1;
+carry_neg_flag["C"] = 1;
+carry_neg_flag["N"] = 1;
 
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -1249,12 +1252,31 @@ test("BRK", function() {
 });
 
 module("Shift and Rotate", setupTeardown);
+test("ASL", function() {
+  expect(4);
+
+  appleToo.AC = 0xCC; // 0b11001100
+
+  appleToo.shift("left");
+
+  equal(appleToo.AC, 0x98, "Should shift AC left one bit"); //0b10011000
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+
+  appleToo.SR = 0;
+  appleToo.write_memory(0xABCD, 0xCC);
+
+  appleToo.shift("left", 0xABCD);
+
+  equal(appleToo._read_memory(0xABCD), 0x98, "Should shift memory left one bit");
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+});
+
 test("LSR", function() {
   expect(4);
 
   appleToo.AC = 0xCD; // 0b11001101
 
-  appleToo.lsr();
+  appleToo.shift("right");
 
   equal(appleToo.AC, 0x66, "Should shift AC right one bit");
   deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
@@ -1262,7 +1284,7 @@ test("LSR", function() {
   appleToo.SR = 0;
   appleToo.write_memory(0xABCD, 0xCD);
 
-  appleToo.lsr(0xABCD);
+  appleToo.shift("right", 0xABCD);
 
   equal(appleToo._read_memory(0xABCD), 0x66, "Should shift memory right one bit");
   deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");

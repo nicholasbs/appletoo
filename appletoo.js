@@ -398,6 +398,37 @@ AppleToo.prototype.shift = function(dir, addr) {
   this.update_zero_and_neg_flags(new_val);
 };
 
+AppleToo.prototype.rotate = function(dir, addr) {
+  var val,
+      new_val,
+      old_carry = this.SR & SR_FLAGS.C;
+  if (addr !== undefined) {
+    val = this._read_memory(addr);
+  } else {
+    val = this.AC;
+  }
+
+  if (dir.toLowerCase() === "left") {
+    new_val = (val << 1) & 0xFF;
+    this.SR &= (~SR_FLAGS.C) & 0xFF;
+    this.SR |= (val & 128) >> 7; //Get bit 7 (carry)
+    new_val |= old_carry;
+  } else if (dir.toLowerCase() === "right") {
+    new_val = val >> 1;
+    this.SR |= val & SR_FLAGS.C;
+    new_val |= old_carry << 7;
+  } else {
+    throw new Error("Invalid shift direction");
+  }
+
+  if (addr !== undefined) {
+    this.write_memory(addr, new_val);
+  } else {
+    this.AC = new_val;
+  }
+  this.update_zero_and_neg_flags(new_val);
+};
+
 var OPCODES = {
   0xA0 : function() { this.ldy(this.immediate()); this.cycles += 2; },
   0xA4 : function() { this.ldy(this.zero_page()); this.cycles += 3; },

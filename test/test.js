@@ -1270,7 +1270,6 @@ test("ASL", function() {
   equal(appleToo._read_memory(0xABCD), 0x98, "Should shift memory left one bit");
   deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
 });
-
 test("LSR", function() {
   expect(4);
 
@@ -1289,4 +1288,43 @@ test("LSR", function() {
   equal(appleToo._read_memory(0xABCD), 0x66, "Should shift memory right one bit");
   deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
 });
+test("ROR", function() {
+  expect(4);
+
+  appleToo.AC = 0xCD; // 0b11001101
+  appleToo.SR = SR_FLAGS.C;
+
+  appleToo.rotate("right");
+
+  equal(appleToo.AC, 0xE6, "Should rotate AC one bit right using carry");
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+
+  appleToo.write_memory(0xABCD, 0xCD); // 0b11001101
+  appleToo.SR = SR_FLAGS.C;
+
+  appleToo.rotate("right", 0xABCD);
+
+  equal(appleToo._read_memory(0xABCD), 0xE6, "Should rotate memory one bit right using carry");
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+});
+test("ROL", function() {
+  expect(4);
+
+  appleToo.AC = 0xCC; // 0b11001100
+  appleToo.SR = SR_FLAGS.C;
+
+  appleToo.rotate("left");
+
+  equal(appleToo.AC, 0x99, "Should rotate AC left one bit using carry"); //0b10011001
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+
+  appleToo.SR = SR_FLAGS.C;
+  appleToo.write_memory(0xABCD, 0xCC);
+
+  appleToo.rotate("left", 0xABCD);
+
+  equal(appleToo._read_memory(0xABCD), 0x99, "Should rotate memory left one bit using carry");
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
+});
+
 // vim: expandtab:ts=2:sw=2

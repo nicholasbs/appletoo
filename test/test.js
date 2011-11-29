@@ -730,60 +730,53 @@ test("ADC", function() {
   expect(12);
 
   appleToo.AC = 0x02;
-  appleToo.write_memory(0xABCD, 0x11);
-  appleToo.adc(0xABCD);
+  appleToo.adc(0x11);
 
-  equal(appleToo.AC, 0x13, "Value at address should be added to accumulator");
+  equal(appleToo.AC, 0x13, "Value should be added to accumulator");
   deepEqual(appleToo.get_status_flags(), unset_flags);
 
   appleToo.AC = 0x01;
-  appleToo.set_status_flags({C:1});
-  appleToo.write_memory(0xABCD, 0x01);
-  appleToo.adc(0xABCD);
+  appleToo.SR = SR_FLAGS.C;
+  appleToo.adc(0x01);
 
   equal(appleToo.AC, 0x03, "ADC should take into account the carry flag");
   deepEqual(appleToo.get_status_flags(), unset_flags, "Carry flag should be cleared");
 
-  appleToo.SR = 0;
+  appleToo.SR = SR_FLAGS.D;
   appleToo.AC = to_bcd(30);
-  appleToo.write_memory(0xABCD, to_bcd(20));
-  appleToo.set_status_flags({D:1});
-  appleToo.adc(0xABCD);
+  appleToo.adc(to_bcd(20));
 
   equal(appleToo.AC, to_bcd(50), "ADC should correctly handle BCD");
   deepEqual(appleToo.get_status_flags(), dec_flag);
 
   appleToo.AC = to_bcd(35);
-  appleToo.set_status_flags({C:1});
-  appleToo.adc(0xABCD);
+  appleToo.SR = SR_FLAGS.C + SR_FLAGS.D;
+  appleToo.adc(to_bcd(20));
 
   equal(appleToo.AC, to_bcd(56), "ADC should correctly handle BCD with Carry");
   deepEqual(appleToo.get_status_flags(), dec_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x00;
-  appleToo.adc(0xFFFF);
+  appleToo.adc(0x00);
 
   deepEqual(appleToo.get_status_flags(), zero_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0xB0;
-  appleToo.write_memory(0xABCD, 0x02);
-  appleToo.adc(0xABCD);
+  appleToo.adc(0x02);
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x02;
-  appleToo.write_memory(0xABCD, 0xFF);
-  appleToo.adc(0xABCD);
+  appleToo.adc(0xFF);
 
   deepEqual(appleToo.get_status_flags(), carry_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x7F;
-  appleToo.write_memory(0xABCD, 0x01);
-  appleToo.adc(0xABCD);
+  appleToo.adc(0x01);
 
   deepEqual(appleToo.get_status_flags(), overflow_neg_flag);
 });

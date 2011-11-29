@@ -236,8 +236,8 @@ AppleToo.prototype.sty = function(addr) {
 AppleToo.prototype.sta = function(addr) {
   this._write_memory(addr, this.AC);
 };
-AppleToo.prototype.adc = function(addr) {
-  var result = this.AC + this._read_memory(addr) + (this.SR & SR_FLAGS.C);
+AppleToo.prototype.adc = function(val) {
+  var result = this.AC + val + (this.SR & SR_FLAGS.C);
 
   if ((this.AC & SR_FLAGS.N) !== (result & SR_FLAGS.N)) {
     this.SR |= SR_FLAGS.V; //Set Overflow Flag
@@ -248,7 +248,7 @@ AppleToo.prototype.adc = function(addr) {
   this.update_zero_and_neg_flags(result);
 
   if (this.SR & SR_FLAGS.D) {
-    result = to_bcd(from_bcd(this.AC) + from_bcd(this._read_memory(addr)) + (this.SR & SR_FLAGS.C));
+    result = to_bcd(from_bcd(this.AC) + from_bcd(val) + (this.SR & SR_FLAGS.C));
     if (result > 99) {
       this.SR |= SR_FLAGS.C;
     } else {

@@ -382,6 +382,16 @@ AppleToo.prototype.compare = function(register, val) {
 
   this.update_zero_and_neg_flags(diff);
 };
+AppleToo.prototype.bit = function(val) {
+  var conj = this.AC & val;
+  this.update_zero_and_neg_flags(conj);
+
+  this.SR &= (~SR_FLAGS.V) & 0xFF;
+  this.SR |= val & SR_FLAGS.V;
+
+  this.SR &= (~SR_FLAGS.N) & 0xFF;
+  this.SR |= val & SR_FLAGS.N;
+};
 
 AppleToo.prototype.shift = function(dir, addr) {
   this._shift(dir, false, addr); // Don't wrap
@@ -547,13 +557,14 @@ var OPCODES = {
   0xD9 : function() { this.compare("AC", this.absolute_indexed_with_y()); this.cycles += 4; },//FIXME Page boundaries
   0xC1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0xD1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
-  0xD9 : function() { this.compare("AC", this.absolute_indexed_with_y()); this.cycles += 4; },//FIXME Page boundaries
   0xE0 : function() { this.compare("XR", this.immediate()); this.cycles += 2; },
   0xE4 : function() { this.compare("XR", this.zero_page()); this.cycles += 3; },
   0xEC : function() { this.compare("XR", this.absolute()); this.cycles += 4; },
   0xC0 : function() { this.compare("YR", this.immediate()); this.cycles += 2; },
   0xC4 : function() { this.compare("YR", this.zero_page()); this.cycles += 3; },
   0xCC : function() { this.compare("YR", this.absolute()); this.cycles += 4; },
+  0x24 : function() { this.bit(this.zero_page()); this.cycles += 3; },
+  0x2C : function() { this.bit(this.absolute()); this.cycles += 4; },
   0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };

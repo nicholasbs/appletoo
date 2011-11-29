@@ -565,6 +565,14 @@ var OPCODES = {
   0xCC : function() { this.compare("YR", this.absolute()); this.cycles += 4; },
   0x24 : function() { this.bit(this.zero_page()); this.cycles += 3; },
   0x2C : function() { this.bit(this.absolute()); this.cycles += 4; },
+  0x69 : function() { this.adc(this.immediate()); this.cycles += 2; },
+  0x65 : function() { this.adc(this.zero_page()); this.cycles += 3; },
+  0x75 : function() { this.adc(this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0x6D : function() { this.adc(this.absolute()); this.cycles += 4; },
+  0x7D : function() { this.adc(this.absolute_indexed_with_x()); this.cycles += 4; },
+  0x79 : function() { this.adc(this.absolute_indexed_with_y()); this.cycles += 4; },
+  0x61 : function() { this.adc(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0x71 : function() { this.adc(this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
   0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };

@@ -371,6 +371,18 @@ AppleToo.prototype.brk = function() {
   this.PC = this.read_word(0xFFFE);
 };
 
+AppleToo.prototype.compare = function(register, val) {
+  var diff = this[register] - val;
+
+  if (diff > 0) {
+    this.SR |= SR_FLAGS.C;
+  } else {
+    this.SR &= (~SR_FLAGS.C) & 0xFF;
+  }
+
+  this.update_zero_and_neg_flags(diff);
+};
+
 AppleToo.prototype.shift = function(dir, addr) {
   this._shift(dir, false, addr); // Don't wrap
 };
@@ -527,6 +539,21 @@ var OPCODES = {
   0x16 : function() { this.shift("left", this.zero_page_indexed_with_x()); this.cycles += 6; },
   0x0E : function() { this.shift("left", this.absolute()); this.cycles += 6; },
   0x1E : function() { this.shift("left", this.absolute_indexed_with_x()); this.cycles += 7; },
+  0xC9 : function() { this.compare("AC", this.immediate()); this.cycles += 2; },
+  0xC5 : function() { this.compare("AC", this.zero_page()); this.cycles += 3; },
+  0xD5 : function() { this.compare("AC", this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0xCD : function() { this.compare("AC", this.absolute()); this.cycles += 4; },
+  0xDD : function() { this.compare("AC", this.absolute_indexed_with_x()); this.cycles += 4; },//FIXME Page boundaries
+  0xD9 : function() { this.compare("AC", this.absolute_indexed_with_y()); this.cycles += 4; },//FIXME Page boundaries
+  0xC1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0xD1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0xD9 : function() { this.compare("AC", this.absolute_indexed_with_y()); this.cycles += 4; },//FIXME Page boundaries
+  0xE0 : function() { this.compare("XR", this.immediate()); this.cycles += 2; },
+  0xE4 : function() { this.compare("XR", this.zero_page()); this.cycles += 3; },
+  0xEC : function() { this.compare("XR", this.absolute()); this.cycles += 4; },
+  0xC0 : function() { this.compare("YR", this.immediate()); this.cycles += 2; },
+  0xC4 : function() { this.compare("YR", this.zero_page()); this.cycles += 3; },
+  0xCC : function() { this.compare("YR", this.absolute()); this.cycles += 4; },
   0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };

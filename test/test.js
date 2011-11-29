@@ -1327,4 +1327,17 @@ test("ROL", function() {
   deepEqual(appleToo.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
 });
 
+module("Compare and Test Bit", setupTeardown);
+test("CMP", function() {
+  expect(2);
+  appleToo.AC = 0x05;
+
+  appleToo.compare("AC", 0x01);
+
+  deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
+
+  appleToo.compare("AC", 0x10);
+
+  deepEqual(appleToo.get_status_flags(), neg_flag, "Negative flag should be set");
+});
 // vim: expandtab:ts=2:sw=2

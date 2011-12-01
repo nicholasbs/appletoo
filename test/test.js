@@ -787,7 +787,7 @@ test("ADC", function() {
 });
 
 test("SBC", function() {
-  expect(12);
+  expect(13);
 
   appleToo.AC = 0x11;
   appleToo.SR = SR_FLAGS.C;
@@ -832,7 +832,7 @@ test("SBC", function() {
   appleToo.SR = 0;
   appleToo.AC = 0x01;
   appleToo.sbc(0x02);
-  console.log(appleToo.AC);
+  equal(appleToo.AC, 0xFE, "SBC Should never return an actual negative number");
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 

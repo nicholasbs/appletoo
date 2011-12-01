@@ -293,7 +293,7 @@ AppleToo.prototype.sbc = function(val) {
   }
 
   this.update_zero_and_neg_flags(result);
-  this.AC = result;
+  this.AC = result & 0xFF;
 };
 AppleToo.prototype.inc_dec_register = function(register, val) {
   this[register] += val;

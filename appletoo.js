@@ -264,8 +264,36 @@ AppleToo.prototype.adc = function(val) {
   }
   this.AC = result;
 };
-AppleToo.prototype.sbc = function(addr) {
-  return false;
+AppleToo.prototype.sbc = function(val) {
+  // Assume we're *not* dealing with BCD right now
+  var carry = ~this.SR & SR_FLAGS.C,
+      result = this.AC - val - carry,
+      twos_comp_diff = unsigned_to_signed(this.AC) - unsigned_to_signed(val) - carry;
+
+  if (twos_comp_diff > 127 || twos_comp_diff < -128) {
+    this.SR |= SR_FLAGS.V; // set overflow
+  } else {
+    this.SR &= (~SR_FLAGS.V) & 0xFF;
+  }
+
+  if (this.SR & SR_FLAGS.D) {
+    result = to_bcd(from_bcd(this.AC) - from_bcd(val)) - carry;
+
+    if (result > 99 || result < 0) {
+      this.SR |= SR_FLAGS.V; //Set Overflow Flag
+    } else {
+      this.SR &= ~SR_FLAGS.V & 0xFF; //Clear Overflow Flag
+    }
+  }
+
+  if (unsigned_to_signed(result) >= 0) {
+    this.SR |= SR_FLAGS.C; // set carry
+  } else {
+    this.SR &= (~SR_FLAGS.C) & 0xFF;
+  }
+
+  this.update_zero_and_neg_flags(result);
+  this.AC = result;
 };
 AppleToo.prototype.inc_dec_register = function(register, val) {
   this[register] += val;
@@ -613,7 +641,9 @@ function from_bcd(val) {
 
 function to_bcd(val) {
   if (val > 99 || val < 0) throw new Error("Bad BCD Value");
-  var digits = val.toString().split("");
+  val = val.toString();
+  if (val.length === 1) val = "0" + val;
+  var digits = val.split("");
 
   return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
 }

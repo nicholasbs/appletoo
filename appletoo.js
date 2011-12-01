@@ -347,7 +347,6 @@ AppleToo.prototype.pop_word = function() {
 AppleToo.prototype.transfer_register = function(from, to) {
   this[to] = this[from];
   this.cycles += 2;
-  this.PC += 1;
   this.update_zero_and_neg_flags(this[to]);
 };
 AppleToo.prototype.logic_op = function(oper, addr) {
@@ -491,10 +490,10 @@ var OPCODES = {
   0x99 : function() { this.sta(this.absolute_indexed_with_y()); this.cycles += 5; },
   0x81 : function() { this.sta(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x91 : function() { this.sta(this.zero_page_indirect_indexed_with_y()); this.cycles += 6; },
-  0xE8 : function() { this.inc_dec_register("XR", 1); this.cycles += 2; this.PC++; },
-  0xC8 : function() { this.inc_dec_register("YR", 1); this.cycles += 2; this.PC++; },
-  0xCA : function() { this.inc_dec_register("XR", -1); this.cycles += 2; this.PC++; },
-  0x88 : function() { this.inc_dec_register("YR", -1); this.cycles += 2; this.PC++; },
+  0xE8 : function() { this.inc_dec_register("XR", 1); this.cycles += 2; },
+  0xC8 : function() { this.inc_dec_register("YR", 1); this.cycles += 2; },
+  0xCA : function() { this.inc_dec_register("XR", -1); this.cycles += 2; },
+  0x88 : function() { this.inc_dec_register("YR", -1); this.cycles += 2; },
   0xE6 : function() { this.inc_dec_memory(this.zero_page(), 1); this.cycles += 5; },
   0xF6 : function() { this.inc_dec_memory(this.zero_page_indexed_with_x(), 1); this.cycles += 6; },
   0xEE : function() { this.inc_dec_memory(this.absolute(), 1); this.cycles += 6; },
@@ -503,13 +502,13 @@ var OPCODES = {
   0xD6 : function() { this.inc_dec_memory(this.zero_page_indexed_with_x(), -1); this.cycles += 6;},
   0xCE : function() { this.inc_dec_memory(this.absolute(), -1); this.cycles += 6; },
   0xDE : function() { this.inc_dec_memory(this.absolute_indexed_with_x(), -1); this.cycles += 7; },
-  0x38 : function() { this.set_flag("C"); this.cycles += 2; this.PC++; },
-  0xF8 : function() { this.set_flag("D"); this.cycles += 2; this.PC++; },
-  0x78 : function() { this.set_flag("I"); this.cycles += 2; this.PC++; },
-  0x18 : function() { this.clear_flag("C"); this.cycles += 2; this.PC++; },
-  0xD8 : function() { this.clear_flag("D"); this.cycles += 2; this.PC++; },
-  0x58 : function() { this.clear_flag("I"); this.cycles += 2; this.PC++; },
-  0xB8 : function() { this.clear_flag("V"); this.cycles += 2; this.PC++; },
+  0x38 : function() { this.set_flag("C"); this.cycles += 2; },
+  0xF8 : function() { this.set_flag("D"); this.cycles += 2; },
+  0x78 : function() { this.set_flag("I"); this.cycles += 2; },
+  0x18 : function() { this.clear_flag("C"); this.cycles += 2; },
+  0xD8 : function() { this.clear_flag("D"); this.cycles += 2; },
+  0x58 : function() { this.clear_flag("I"); this.cycles += 2; },
+  0xB8 : function() { this.clear_flag("V"); this.cycles += 2; },
   0xAA : function() { this.transfer_register("AC", "XR"); },
   0x8A : function() { this.transfer_register("XR", "AC"); },
   0xA8 : function() { this.transfer_register("AC", "YR"); },

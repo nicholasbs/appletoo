@@ -951,13 +951,14 @@ test("Pop", function() {
 
 module("Transfer", setupTeardown);
 test("transfer_register", function() {
+  expect(4);
+
   appleToo.SR = 0;
   appleToo.AC = 0x00;
   appleToo.transfer_register("AC", "XR");
 
   equal(appleToo.XR, 0x00, "Accumulator should be transfered to X");
   equal(appleToo.cycles, 2, "Should take 2 cycles");
-  equal(appleToo.PC, 0xC001, "PC should be incremented by one");
   deepEqual(appleToo.get_status_flags(), zero_flag, "Zero flag should be set");
 
   appleToo.SR = 0;

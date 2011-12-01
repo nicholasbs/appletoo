@@ -601,6 +601,14 @@ var OPCODES = {
   0x79 : function() { this.adc(this.absolute_indexed_with_y()); this.cycles += 4; },
   0x61 : function() { this.adc(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
   0x71 : function() { this.adc(this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0xE9 : function() { this.sbc(this.immediate()); this.cycles += 2; },
+  0xE5 : function() { this.sbc(this.zero_page()); this.cycles += 3; },
+  0xF5 : function() { this.sbc(this.zero_page_indexed_with_x()); this.cycles += 4; },
+  0xED : function() { this.sbc(this.absolute()); this.cycles += 4; },
+  0xFD : function() { this.sbc(this.absolute_indexed_with_x()); this.cycles += 4; },
+  0xF9 : function() { this.sbc(this.absolute_indexed_with_y()); this.cycles += 4; },
+  0xE1 : function() { this.sbc(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
+  0xF1 : function() { this.sbc(this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
   0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };

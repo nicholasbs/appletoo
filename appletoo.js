@@ -50,7 +50,8 @@ AppleToo.prototype.accumulator = function() {
   return this.AC;
 };
 AppleToo.prototype.relative = function() {
-  return this.PC + unsigned_to_signed(this._read_memory(this.PC++));
+  var jump = unsigned_to_signed(this._read_memory(this.PC++));
+  return this.PC + jump;
 };
 AppleToo.prototype.zero_page = function() {
   if (this._read_memory(this.PC) > 0xFF) throw new Error("Zero_Page boundary exceeded");
@@ -236,8 +237,9 @@ AppleToo.prototype.sty = function(addr) {
 AppleToo.prototype.sta = function(addr) {
   this._write_memory(addr, this.AC);
 };
-AppleToo.prototype.adc = function(val) {
-  var result = this.AC + val + (this.SR & SR_FLAGS.C);
+AppleToo.prototype.adc = function(addr) {
+  var val = this._read_memory(addr),
+      result = this.AC + val + (this.SR & SR_FLAGS.C);
 
   if ((this.AC & SR_FLAGS.N) !== (result & SR_FLAGS.N)) {
     this.SR |= SR_FLAGS.V; //Set Overflow Flag
@@ -264,9 +266,9 @@ AppleToo.prototype.adc = function(val) {
   }
   this.AC = result;
 };
-AppleToo.prototype.sbc = function(val) {
-  // Assume we're *not* dealing with BCD right now
-  var carry = ~this.SR & SR_FLAGS.C,
+AppleToo.prototype.sbc = function(addr) {
+  var val = this._read_memory(addr),
+      carry = ~this.SR & SR_FLAGS.C,
       result = this.AC - val - carry,
       twos_comp_diff = unsigned_to_signed(this.AC) - unsigned_to_signed(val) - carry;
 

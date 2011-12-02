@@ -113,16 +113,16 @@ test("Relative", function() {
 
   //Running the function will change the program counter,
   //so we store the value to test before that
-  var testValue = appleToo.PC + 0x10;
+  var testValue = appleToo.PC + 0x10 + 0x01;
   appleToo.write_memory(appleToo.PC, 0x10);
 
-  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter and its argument");
+  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter (after its argument has been read) and its argument");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 
-  testValue = appleToo.PC - 1;
+  testValue = appleToo.PC;
   appleToo.write_memory(appleToo.PC, 0xFF);
 
-  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter and its argument");
+  equal(appleToo.relative(), testValue, "AppleToo.relative should return the sum of the Program Counter (after its argument has been read) and its argument");
 });
 
 test("Zero Page", function() {
@@ -735,28 +735,32 @@ test("ADC", function() {
   expect(12);
 
   appleToo.AC = 0x02;
-  appleToo.adc(0x11);
+  appleToo.write_memory(0xABCD, 0x11);
+  appleToo.adc(0xABCD);
 
   equal(appleToo.AC, 0x13, "Value should be added to accumulator");
   deepEqual(appleToo.get_status_flags(), unset_flags);
 
   appleToo.AC = 0x01;
   appleToo.SR = SR_FLAGS.C;
-  appleToo.adc(0x01);
+  appleToo.write_memory(0xABCD, 0x1);
+  appleToo.adc(0xABCD);
 
   equal(appleToo.AC, 0x03, "ADC should take into account the carry flag");
   deepEqual(appleToo.get_status_flags(), unset_flags, "Carry flag should be cleared");
 
   appleToo.SR = SR_FLAGS.D;
   appleToo.AC = to_bcd(30);
-  appleToo.adc(to_bcd(20));
+  appleToo.write_memory(0xABCD, to_bcd(20));
+  appleToo.adc(0xABCD);
 
   equal(appleToo.AC, to_bcd(50), "ADC should correctly handle BCD");
   deepEqual(appleToo.get_status_flags(), dec_flag);
 
   appleToo.AC = to_bcd(35);
   appleToo.SR = SR_FLAGS.C + SR_FLAGS.D;
-  appleToo.adc(to_bcd(20));
+  appleToo.write_memory(0xABCD, to_bcd(20));
+  appleToo.adc(0xABCD);
 
   equal(appleToo.AC, to_bcd(56), "ADC should correctly handle BCD with Carry");
   deepEqual(appleToo.get_status_flags(), dec_flag);
@@ -769,19 +773,22 @@ test("ADC", function() {
 
   appleToo.SR = 0;
   appleToo.AC = 0xB0;
-  appleToo.adc(0x02);
+  appleToo.write_memory(0xABCD, 0x02);
+  appleToo.adc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x02;
-  appleToo.adc(0xFF);
+  appleToo.write_memory(0xABCD, 0xFF);
+  appleToo.adc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), carry_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x7F;
-  appleToo.adc(0x01);
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.adc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_neg_flag);
 });
@@ -791,54 +798,62 @@ test("SBC", function() {
 
   appleToo.AC = 0x11;
   appleToo.SR = SR_FLAGS.C;
-  appleToo.sbc(0x01);
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
 
   equal(appleToo.AC, 0x10, "Value should be subtracted from accumulator");
   deepEqual(appleToo.get_status_flags(), carry_flag);
 
   appleToo.AC = 0x03;
   appleToo.SR = 0;
-  appleToo.sbc(0x01);
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
 
   equal(appleToo.AC, 0x01, "SBC should take into account the carry flag");
   deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
 
   appleToo.SR = SR_FLAGS.D;
   appleToo.AC = to_bcd(10);
-  appleToo.sbc(to_bcd(5));
+  appleToo.write_memory(0xABCD, to_bcd(5));
+  appleToo.sbc(0xABCD);
 
   equal(from_bcd(appleToo.AC), 4, "SBC should correctly handle BCD");
   deepEqual(appleToo.get_status_flags(), dec_carry_flag);
 
   appleToo.SR = SR_FLAGS.C + SR_FLAGS.D;
   appleToo.AC = to_bcd(10);
-  appleToo.sbc(to_bcd(5));
+  appleToo.write_memory(0xABCD, to_bcd(5));
+  appleToo.sbc(0xABCD);
 
   equal(from_bcd(appleToo.AC), 5, "SBC should correctly handle BCD with Carry");
   deepEqual(appleToo.get_status_flags(), dec_carry_flag);
 
   appleToo.SR = SR_FLAGS.C;
   appleToo.AC = 0x00;
-  appleToo.sbc(0x00);
+  appleToo.write_memory(0xABCD, 0x00);
+  appleToo.sbc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), carry_zero_flag);
 
   appleToo.SR = SR_FLAGS.C;
   appleToo.AC = 0x78; // 120
-  appleToo.sbc(0xF8); // -120
+  appleToo.write_memory(0xABCD, 0xF8); // -120
+  appleToo.sbc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_neg_flag);
 
   appleToo.SR = 0;
   appleToo.AC = 0x01;
-  appleToo.sbc(0x02);
+  appleToo.write_memory(0xABCD, 0x02);
+  appleToo.sbc(0xABCD);
   equal(appleToo.AC, 0xFE, "SBC Should never return an actual negative number");
 
   deepEqual(appleToo.get_status_flags(), neg_flag);
 
   appleToo.SR = SR_FLAGS.C;
   appleToo.AC = 0x80;
-  appleToo.sbc(0x01);
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_carry_flag);
 });
@@ -1090,7 +1105,8 @@ test("BCC", function() {
 
   OPCODES[0x90].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since carry is clear");
+  // Add extra 1 to account for PC change from reading operand
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since carry is clear");
 
   appleToo.PC = original_PC;
   appleToo.SR = SR_FLAGS.C;
@@ -1107,7 +1123,7 @@ test("BCS", function() {
 
   OPCODES[0xB0].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since carry is set");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since carry is set");
 
   appleToo.PC = original_PC;
   appleToo.SR = 0;
@@ -1124,7 +1140,7 @@ test("BEQ", function() {
 
   OPCODES[0xF0].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since zero is set");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since zero is set");
 
   appleToo.PC = original_PC;
   appleToo.SR = 0;
@@ -1141,7 +1157,7 @@ test("BNE", function() {
 
   OPCODES[0xD0].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since zero is clear");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since zero is clear");
 
   appleToo.PC = original_PC;
   appleToo.SR = SR_FLAGS.Z;
@@ -1158,7 +1174,7 @@ test("BMI", function() {
 
   OPCODES[0x30].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since negative is set");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since negative is set");
 
   appleToo.PC = original_PC;
   appleToo.SR = 0;
@@ -1175,7 +1191,7 @@ test("BPL", function() {
 
   OPCODES[0x10].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since negative is clear");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since negative is clear");
 
   appleToo.PC = original_PC;
   appleToo.SR = SR_FLAGS.N;
@@ -1192,7 +1208,7 @@ test("BVC", function() {
 
   OPCODES[0x50].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since overflow is clear");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since overflow is clear");
 
   appleToo.PC = original_PC;
   appleToo.SR = SR_FLAGS.V;
@@ -1209,7 +1225,7 @@ test("BVS", function() {
 
   OPCODES[0x70].call(appleToo);
 
-  equal(appleToo.PC, original_PC+0x04, "Should branch since overflow is set");
+  equal(appleToo.PC, original_PC+0x04+0x01, "Should branch since overflow is set");
 
   appleToo.PC = original_PC;
   appleToo.SR = 0;

@@ -147,7 +147,9 @@ AppleToo.prototype.write_memory = function(loc, val) {
   if (typeof loc === "string") loc = parseInt(loc, 16);
   if (typeof val === "string") val = parseInt(val, 16);
 
-  if (val <= 255) {
+  if (val < 0) {
+    throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
+  } else if (val <= 255 ) {
     this.memory[loc] = val;
   } else {
     console.log(val);
@@ -160,7 +162,9 @@ AppleToo.prototype._write_memory = function(loc, val) {
   if (typeof loc === "string") {
     loc = parseInt(loc, 16);
   }
-  if (val <= 255) {
+  if (val < 0) {
+    throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
+  } else if (val <= 255 ) {
     this.memory[loc] = val;
   } else if (val <= 65535) {
     var high_byte = (val & 0xFF00) >> 8,
@@ -466,6 +470,11 @@ AppleToo.prototype._shift = function(dir, wrap, addr) {
   this.update_zero_and_neg_flags(new_val);
 };
 
+AppleToo.prototype.mem_range = function(start, end) {
+  var temp_mem = this.memory.slice(start, end);
+  for (var i in temp_mem) temp_mem[i] = temp_mem[i].toString(16);
+  return temp_mem;
+};
 
 var OPCODES = {
   0xA0 : function() { this.ldy(this.immediate()); this.cycles += 2; },

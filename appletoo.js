@@ -99,12 +99,17 @@ AppleToo.prototype.zero_page_indirect_indexed_with_x = function() {
   addr = (addr + this.XR) % 255;
   return this.read_word(addr);
 };
-AppleToo.prototype.zero_page_indirect_indexed_with_y = function() {
-  var addr = this._read_memory(this.PC++);
-  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
+AppleToo.prototype.indirect_indexed_y = function() {
+  var addr = this._read_memory(this.PC++),
+      low = this._read_memory(addr) + this.YR,
+      high = this._read_memory(addr + 1);
 
-  addr = (addr + this.YR) % 255;
-  return this.read_word(addr);
+  if ((low & 0xFF) != low) { // Handle carry from adding YR
+    low &= 0xFF;
+    high += 1;
+  }
+
+  return (high << 8) + low;
 };
 
 AppleToo.prototype.print_registers = function() {
@@ -480,7 +485,7 @@ var OPCODES = {
   0xBD : function() { this.lda(this.absolute_indexed_with_x()); this.cycles += 4; },
   0xB9 : function() { this.lda(this.absolute_indexed_with_y()); this.cycles += 4; },
   0xA1 : function() { this.lda(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0xB1 : function() { this.lda(this.zero_page_indirect_indexed_with_y()); this.cycles += 6; },
+  0xB1 : function() { this.lda(this.indirect_indexed_y()); this.cycles += 6; },
   0x86 : function() { this.stx(this.zero_page()); this.cycles += 3; },
   0x96 : function() { this.stx(this.zero_page_indexed_with_y()); this.cycles += 4; },
   0x8E : function() { this.stx(this.absolute()); this.cycles += 4; },
@@ -493,7 +498,7 @@ var OPCODES = {
   0x9D : function() { this.sta(this.absolute_indexed_with_x()); this.cycles += 5; },
   0x99 : function() { this.sta(this.absolute_indexed_with_y()); this.cycles += 5; },
   0x81 : function() { this.sta(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0x91 : function() { this.sta(this.zero_page_indirect_indexed_with_y()); this.cycles += 6; },
+  0x91 : function() { this.sta(this.indirect_indexed_y()); this.cycles += 6; },
   0xE8 : function() { this.inc_dec_register("XR", 1); this.cycles += 2; },
   0xC8 : function() { this.inc_dec_register("YR", 1); this.cycles += 2; },
   0xCA : function() { this.inc_dec_register("XR", -1); this.cycles += 2; },
@@ -530,7 +535,7 @@ var OPCODES = {
   0x3D : function() { this.logic_op("AND", this.absolute_indexed_with_x()); this.cycles += 4; },
   0x39 : function() { this.logic_op("AND", this.absolute_indexed_with_y()); this.cycles += 4; },
   0x21 : function() { this.logic_op("AND", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0x31 : function() { this.logic_op("AND", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x31 : function() { this.logic_op("AND", this.indirect_indexed_y()); this.cycles += 5; },
   0x09 : function() { this.logic_op("ORA", this.immediate()); this.cycles += 2; },
   0x05 : function() { this.logic_op("ORA", this.zero_page()); this.cycles += 3; },
   0x15 : function() { this.logic_op("ORA", this.zero_page_indexed_with_x()); this.cycles += 4; },
@@ -538,7 +543,7 @@ var OPCODES = {
   0x1D : function() { this.logic_op("ORA", this.absolute_indexed_with_x()); this.cycles += 4; },
   0x19 : function() { this.logic_op("ORA", this.absolute_indexed_with_y()); this.cycles += 4; },
   0x01 : function() { this.logic_op("ORA", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0x11 : function() { this.logic_op("ORA", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x11 : function() { this.logic_op("ORA", this.indirect_indexed_y()); this.cycles += 5; },
   0x49 : function() { this.logic_op("EOR", this.immediate()); this.cycles += 2; },
   0x45 : function() { this.logic_op("EOR", this.zero_page()); this.cycles += 3; },
   0x55 : function() { this.logic_op("EOR", this.zero_page_indexed_with_x()); this.cycles += 4; },
@@ -546,7 +551,7 @@ var OPCODES = {
   0x5D : function() { this.logic_op("EOR", this.absolute_indexed_with_x()); this.cycles += 4; },
   0x59 : function() { this.logic_op("EOR", this.absolute_indexed_with_y()); this.cycles += 4; },
   0x41 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0x51 : function() { this.logic_op("EOR", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x51 : function() { this.logic_op("EOR", this.indirect_indexed_y()); this.cycles += 5; },
   0x4C : function() { this.jump(this.absolute()); this.cycles += 3; },
   0x6C : function() { this.jump(this.absolute_indirect()); this.cycles += 5; },
   0x20 : function() { this.push_word(this.PC + 1); this.jump(this.absolute()); this.cycles += 6; },
@@ -587,7 +592,7 @@ var OPCODES = {
   0xDD : function() { this.compare("AC", this.absolute_indexed_with_x()); this.cycles += 4; },//FIXME Page boundaries
   0xD9 : function() { this.compare("AC", this.absolute_indexed_with_y()); this.cycles += 4; },//FIXME Page boundaries
   0xC1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0xD1 : function() { this.compare("AC", this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0xD1 : function() { this.compare("AC", this.indirect_indexed_y()); this.cycles += 5; },
   0xE0 : function() { this.compare("XR", this.immediate()); this.cycles += 2; },
   0xE4 : function() { this.compare("XR", this.zero_page()); this.cycles += 3; },
   0xEC : function() { this.compare("XR", this.absolute()); this.cycles += 4; },
@@ -603,7 +608,7 @@ var OPCODES = {
   0x7D : function() { this.adc(this.absolute_indexed_with_x()); this.cycles += 4; },
   0x79 : function() { this.adc(this.absolute_indexed_with_y()); this.cycles += 4; },
   0x61 : function() { this.adc(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0x71 : function() { this.adc(this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0x71 : function() { this.adc(this.indirect_indexed_y()); this.cycles += 5; },
   0xE9 : function() { this.sbc(this.immediate()); this.cycles += 2; },
   0xE5 : function() { this.sbc(this.zero_page()); this.cycles += 3; },
   0xF5 : function() { this.sbc(this.zero_page_indexed_with_x()); this.cycles += 4; },
@@ -611,7 +616,7 @@ var OPCODES = {
   0xFD : function() { this.sbc(this.absolute_indexed_with_x()); this.cycles += 4; },
   0xF9 : function() { this.sbc(this.absolute_indexed_with_y()); this.cycles += 4; },
   0xE1 : function() { this.sbc(this.zero_page_indirect_indexed_with_x()); this.cycles += 6; },
-  0xF1 : function() { this.sbc(this.zero_page_indirect_indexed_with_y()); this.cycles += 5; },
+  0xF1 : function() { this.sbc(this.indirect_indexed_y()); this.cycles += 5; },
   0xEA : function() { this.PC++; },
   0x00 : function() { this.brk(); }
 };

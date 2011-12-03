@@ -459,6 +459,11 @@ AppleToo.prototype._shift = function(dir, wrap, addr) {
   this.update_zero_and_neg_flags(new_val);
 };
 
+AppleToo.prototype.mem_range = function(start, end) {
+  var temp_mem = this.memory.slice(start, end);
+  for (var i in temp_mem) temp_mem[i] = temp_mem[i].toString(16);
+  return temp_mem;
+};
 
 var OPCODES = {
   0xA0 : function() { this.ldy(this.immediate()); this.cycles += 2; },

@@ -268,9 +268,9 @@ AppleToo.prototype.adc = function(addr) {
 };
 AppleToo.prototype.sbc = function(addr) {
   var val = this._read_memory(addr),
-      carry = ~this.SR & SR_FLAGS.C,
-      result = this.AC - val - carry,
-      twos_comp_diff = unsigned_to_signed(this.AC) - unsigned_to_signed(val) - carry;
+      borrow = ~this.SR & SR_FLAGS.C,
+      result = this.AC - val - borrow,
+      twos_comp_diff = unsigned_to_signed(this.AC) - unsigned_to_signed(val) - borrow;
 
   if (twos_comp_diff > 127 || twos_comp_diff < -128) {
     this.SR |= SR_FLAGS.V; // set overflow
@@ -279,7 +279,7 @@ AppleToo.prototype.sbc = function(addr) {
   }
 
   if (this.SR & SR_FLAGS.D) {
-    result = to_bcd(from_bcd(this.AC) - from_bcd(val)) - carry;
+    result = to_bcd(from_bcd(this.AC) - from_bcd(val)) - borrow;
 
     if (result > 99 || result < 0) {
       this.SR |= SR_FLAGS.V; //Set Overflow Flag
@@ -288,9 +288,11 @@ AppleToo.prototype.sbc = function(addr) {
     }
   }
 
-  if (unsigned_to_signed(result) >= 0) {
+  if (borrow) {
     this.SR |= SR_FLAGS.C; // set carry
-  } else {
+  }
+  // TODO: This works, but I still don't quite get "underflows"
+  if (result < 0) {
     this.SR &= (~SR_FLAGS.C) & 0xFF;
   }
 

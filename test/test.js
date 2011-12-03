@@ -794,7 +794,7 @@ test("ADC", function() {
 });
 
 test("SBC", function() {
-  expect(13);
+  expect(14);
 
   appleToo.AC = 0x11;
   appleToo.SR = SR_FLAGS.C;
@@ -856,6 +856,13 @@ test("SBC", function() {
   appleToo.sbc(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_carry_flag);
+
+  appleToo.SR = SR_FLAGS.C + SR_FLAGS.N;
+  appleToo.AC = 0x90;
+  appleToo.write_memory(0xABCD, 0x01);
+  appleToo.sbc(0xABCD);
+
+  deepEqual(appleToo.get_status_flags(), carry_neg_flag);
 });
 
 module("Increment and Decrement", setupTeardown);

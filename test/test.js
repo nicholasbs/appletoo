@@ -209,7 +209,7 @@ test("Absolute, Indirect", function() {
   equal(appleToo.absolute_indirect(), 0xABCD, "Absolute Indirect should follow the original 6502 bug when we're in COMPATIBILITY_MODE");
 });
 
-test("Zero Page, Indirect, Indexed with X", function() {
+test("Indexed with X, Indirect", function() {
   expect(2);
 
   appleToo.write_memory(0x00FF, 0xAB);
@@ -218,7 +218,7 @@ test("Zero Page, Indirect, Indexed with X", function() {
 
   appleToo.write_memory(appleToo.PC, 0xF0);
 
-  equal(appleToo.zero_page_indirect_indexed_with_x(), 0xABCD, "AppleToo.zero_page_indirect_indexed_with_x should return the address formed by reading low byte at the zero page address plus the X register and the high byte at the zero page address plus X register plus one");
+  equal(appleToo.indexed_x_indirect(), 0xABCD, "Index with X, Indirect should return the address formed by reading low byte at the zero page address plus the X register and the high byte at the zero page address plus X register plus one");
   equal(appleToo.PC, 0xC001, "Program Counter should be increased by 1");
 });
 

@@ -422,8 +422,9 @@ AppleToo.prototype.compare = function(register, val) {
 
   this.update_zero_and_neg_flags(diff);
 };
-AppleToo.prototype.bit = function(val) {
-  var conj = this.AC & val;
+AppleToo.prototype.bit = function(addr) {
+  var val = this._read_memory(addr),
+      conj = this.AC & val;
   this.update_zero_and_neg_flags(conj);
 
   this.SR &= (~SR_FLAGS.V) & 0xFF;

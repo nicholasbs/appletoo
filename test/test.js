@@ -1354,15 +1354,18 @@ test("BIT", function() {
   expect(2);
 
   appleToo.AC = 0x0F; //0b00001111
+  appleToo.write_memory(0xABCD, 0xC1); // 0b11000001
 
-  appleToo.bit(0xC1); //0b11000001
+  appleToo.bit(0xABCD);
 
   deepEqual(appleToo.get_status_flags(), overflow_neg_flag, "Overflow and Negative flags should be set based on operand");
 
   appleToo.SR = 0;
 
   appleToo.AC = 0x0F;
-  appleToo.bit(0x30); //0b11110000
+  appleToo.write_memory(0xABCD, 0x30); //0b11110000
+
+  appleToo.bit(0xABCD);
   deepEqual(appleToo.get_status_flags(), zero_flag, "Zero flag should be set based on result");
 });
 // vim: expandtab:ts=2:sw=2

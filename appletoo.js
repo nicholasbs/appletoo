@@ -535,10 +535,10 @@ var OPCODES = {
   0x98 : function() { this.transfer_register("YR", "AC"); },
   0xBA : function() { this.transfer_register("SP", "XR"); },
   0x9A : function() { this.transfer_register("XR", "SP"); },
-  0x48 : function() { this.push(this.AC); this.update_zero_and_neg_flags(this.AC); this.cycles += 3; this.PC++; },
-  0x08 : function() { this.push(this.SR); this.update_zero_and_neg_flags(this.SR); this.cycles += 3; this.PC++; },
-  0x68 : function() { this.pop("AC"); this.update_zero_and_neg_flags(this.AC); this.cycles += 4; this.PC++; },
-  0x28 : function() { this.pop("SR"); this.update_zero_and_neg_flags(this.SR); this.cycles += 4; this.PC++; }, // TODO: there's no need to call update_zero_and_neg_flags here, right?
+  0x48 : function() { this.push(this.AC); this.update_zero_and_neg_flags(this.AC); this.cycles += 3; },
+  0x08 : function() { this.push(this.SR); this.update_zero_and_neg_flags(this.SR); this.cycles += 3; },
+  0x68 : function() { this.pop("AC"); this.update_zero_and_neg_flags(this.AC); this.cycles += 4; },
+  0x28 : function() { this.pop("SR"); this.update_zero_and_neg_flags(this.SR); this.cycles += 4; }, // TODO: there's no need to call update_zero_and_neg_flags here, right?
   0x29 : function() { this.logic_op("AND", this.immediate()); this.cycles += 2; },
   0x25 : function() { this.logic_op("AND", this.zero_page()); this.cycles += 3; },
   0x35 : function() { this.logic_op("AND", this.zero_page_indexed_with_x()); this.cycles += 4; },

@@ -411,8 +411,9 @@ AppleToo.prototype.brk = function() {
   this.PC = this.read_word(0xFFFE);
 };
 
-AppleToo.prototype.compare = function(register, val) {
-  var diff = this[register] - val;
+AppleToo.prototype.compare = function(register, addr) {
+  var val = this._read_memory(addr),
+      diff = this[register] - val;
 
   if (diff > 0) {
     this.SR |= SR_FLAGS.C;

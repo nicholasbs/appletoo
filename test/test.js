@@ -1341,12 +1341,15 @@ module("Compare and Test Bit", setupTeardown);
 test("CMP", function() {
   expect(2);
   appleToo.AC = 0x05;
+  appleToo.write_memory(0xABCD, 0x01);
 
-  appleToo.compare("AC", 0x01);
+  appleToo.compare("AC", 0xABCD);
 
   deepEqual(appleToo.get_status_flags(), carry_flag, "Carry flag should be set");
 
-  appleToo.compare("AC", 0x10);
+  appleToo.write_memory(0xABCD, 0x10);
+
+  appleToo.compare("AC", 0xABCD);
 
   deepEqual(appleToo.get_status_flags(), neg_flag, "Negative flag should be set");
 });

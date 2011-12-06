@@ -115,12 +115,23 @@ AppleToo.prototype.run6502 = function(program, pc) {
 
 AppleToo.prototype.run_loop = function() {
   this.running = true;
-  while (this.running) {
-    //this.print_registers();
-    //console.log("Next Instruction:",this.read_memory(this.PC));
-    this.run(this._read_memory(this.PC++));
-    this.draw();
-  }
+
+  var self = this;
+  this.while_loop = setInterval(function() {
+    var cycles = self.cycles;
+    while (self.cycles < cycles + 100) {
+      //this.print_registers();
+      //console.log("Next Instruction:",this.read_memory(this.PC));
+      self.run(self._read_memory(self.PC++));
+      self.draw();
+    }
+
+    console.log("Next Instruction:",self.read_memory(self.PC));
+
+    if (!self.running) {
+      clearInterval(self.while_loop);
+    }
+  });
 };
 
 AppleToo.prototype.run = function(opcode) {

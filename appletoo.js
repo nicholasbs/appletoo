@@ -1,5 +1,9 @@
 var AppleToo = function(options) {
-  options = options || {compatiblity: false};
+  if (options === undefined){
+    options = default_options;
+  } else {
+    options = extend(default_options, options);
+  }
   // Memory is stored as numbers
   // See: http://jsperf.com/tostring-16-vs-parseint-x-16
   this.memory = [];
@@ -18,6 +22,11 @@ var AppleToo = function(options) {
   this.cycles = 0;
 
   this.initialize_memory();
+};
+var default_options = {
+  compatiblity: false,
+  screen: "screen",
+  rom: null
 };
 
 AppleToo.prototype.run6502 = function(program, pc) {
@@ -673,5 +682,15 @@ function to_bcd(val) {
   var digits = val.split("");
 
   return (parseInt(digits[0],10)<<4) + parseInt(digits[1],10);
+}
+
+function extend(base, add) {
+  var obj = JSON.parse(JSON.stringify(base)); //Clone base
+  for (var i in add) {
+    if (add.hasOwnProperty(i)) {
+      obj[i] = add[i];
+    }
+  }
+  return obj;
 }
 // vim: expandtab:ts=2:sw=2

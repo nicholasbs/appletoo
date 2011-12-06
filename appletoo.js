@@ -15,7 +15,7 @@ var AppleToo = function(options) {
   this.SP = 0xFF;
   this.PC = 0xC000;
 
-  this.COMPATIBILITY_MODE = options.compatiblity;
+  this.COMPATIBILITY_MODE = options.compatibility;
 
   this.running = true;
 
@@ -637,7 +637,7 @@ var OPCODES = {
   0xF9 : function() { this.sbc(this.absolute_indexed_with_y()); this.cycles += 4; },
   0xE1 : function() { this.sbc(this.indexed_x_indirect()); this.cycles += 6; },
   0xF1 : function() { this.sbc(this.indirect_indexed_y()); this.cycles += 5; },
-  0xEA : function() { this.PC++; },
+  0xEA : function() { },
   0x00 : function() { this.brk(); }
 };
 

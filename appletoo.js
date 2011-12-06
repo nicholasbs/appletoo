@@ -32,6 +32,15 @@ var AppleToo = function(options) {
 
   this.initialize_memory();
 };
+
+AppleToo.prototype.load_memory = function(addr, data) {
+  data = data.replace(/\s+/g, "");
+
+  for (var i = 0; i < data.length; i += 2) {
+    this.memory[addr + i/2] = parseInt(data.substr(i, 2), 16);
+  }
+};
+
 var default_options = {
   compatiblity: false,
   screen: "screen",
@@ -96,21 +105,22 @@ AppleToo.prototype.draw_pixel = function(row, col, top, bottom) {
 
 //TODO Clean up this method
 AppleToo.prototype.run6502 = function(program, pc) {
-  this.running = true;
   this.PC = pc === undefined ? 0xC000 : pc;
   var opcode;
 
-  this.program = program.replace(/\s+/g, "");
-
-  for (var i = 0; i < this.program.length; i += 2) {
-    this.memory[0xC000 + i/2] = parseInt(this.program.substr(i, 2), 16);
-  }
-
-  while (this.running) {
-    this.run(this._read_memory(this.PC++));
-  }
-
+  this.load_memory(0xC000, program);
+  this.run_loop();
   //this.print_registers();
+};
+
+AppleToo.prototype.run_loop = function() {
+  this.running = true;
+  while (this.running) {
+    //this.print_registers();
+    //console.log("Next Instruction:",this.read_memory(this.PC));
+    this.run(this._read_memory(this.PC++));
+    this.draw();
+  }
 };
 
 AppleToo.prototype.run = function(opcode) {
@@ -474,7 +484,7 @@ AppleToo.prototype.branch_flag_clear = function(flag) {
   }
 };
 AppleToo.prototype.brk = function() {
-  this.running = false;
+  //this.running = false;
   this.cycles += 7;
 
   this.SR |= SR_FLAGS.I;

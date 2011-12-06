@@ -1244,7 +1244,7 @@ test("NOP", function() {
 
   OPCODES[0xEA].call(appleToo);
 
-  equal(appleToo.PC, original_PC+1, "Should increment the PC");
+  equal(appleToo.PC, original_PC, "Should not increment the PC");
 });
 test("BRK", function() {
   expect(4);

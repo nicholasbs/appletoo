@@ -1,0 +1,33 @@
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+	<title>AppleToo.js</title>
+	<script src="appletoo.js"></script>
+	<style type="text/css" media="screen">
+		/*canvas {
+			width: 280px;
+			height: 192px;
+			background-color: blue;
+		}*/
+		body {
+			background-color: #222;
+		}
+	</style>
+	<script type="text/javascript" charset="utf-8">
+		window.onload = function(){
+			var appleScreen = document.getElementById("screen");
+			a = new AppleToo({compatibility: true});
+			appleScreen.width = a.pixel_w * 40;
+			appleScreen.height = a.pixel_h * 24;
+			a.write_memory(0x427, 0xFF);
+			a.run6502("a9 00");
+		};
+	</script>
+</head>
+<body>
+	<div id="container">
+		<canvas id="screen"></canvas>
+	</div>
+</body>
+</html>

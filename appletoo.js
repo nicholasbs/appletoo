@@ -17,6 +17,15 @@ var AppleToo = function(options) {
 
   this.COMPATIBILITY_MODE = options.compatibility;
 
+  var screen = document.getElementById(options.screen)
+  if (screen) {
+    this.ctx = screen.getContext("2d");
+  }
+  this.display = !!screen;
+  this.display_mode = DISPLAY_MODES.lowres;
+  this.pixel_w = 21;
+  this.pixel_h = 24;
+
   this.running = true;
 
   this.cycles = 0;
@@ -29,6 +38,63 @@ var default_options = {
   rom: null
 };
 
+var ROW_ADDR = [ //See Figure 2-5 of Apple IIe Technical Reference
+  0x400,
+  0x480,
+  0x500,
+  0x580,
+  0x600,
+  0x680,
+  0x700,
+  0x780,
+  0x428,
+  0x4A8,
+  0x528,
+  0x5A8,
+  0x628,
+  0x6A8,
+  0x728,
+  0x7A8,
+  0x450,
+  0x4D0,
+  0x550,
+  0x5D0,
+  0x650,
+  0x6D0,
+  0x750,
+  0x7D0
+];
+var DISPLAY_MODES = {
+  lowres: 0
+};
+AppleToo.prototype.draw = function() {
+  if (!this.display) { return; }
+  for (var row = 0; row < 24; row++) {
+    for (var col = 0; col < 40; col++) {
+      if (this.display_mode === DISPLAY_MODES.lowres) {
+        var val = this._read_memory(ROW_ADDR[row] + col),
+            top = (val & 0xF0) >> 4,
+            bottom = val & 0x0F;
+            //console.log("Row: ",row,"Col: ",col,"Top: ",top,"Bottom: ",bottom);
+        this.draw_pixel(row, col, top, bottom);
+      }
+    }
+  }
+};
+
+AppleToo.prototype.draw_pixel = function(row, col, top, bottom) {
+  var x = col * this.pixel_w,
+      y = row * this.pixel_h;
+
+      //console.log("X",x,"Y",y);
+  this.ctx.fillStyle = top == 0 ? "black" : "green";
+  this.ctx.fillRect(x, y, this.pixel_w, this.pixel_h/2);
+
+  this.ctx.fillStyle = bottom == 0 ? "black" : "green";
+  this.ctx.fillRect(x, y + this.pixel_h/2, this.pixel_w, this.pixel_h/2);
+};
+
+//TODO Clean up this method
 AppleToo.prototype.run6502 = function(program, pc) {
   this.running = true;
   this.PC = pc === undefined ? 0xC000 : pc;

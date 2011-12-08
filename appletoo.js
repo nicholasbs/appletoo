@@ -126,8 +126,9 @@ AppleToo.prototype.run_loop = function() {
       //this.print_registers();
       //console.log("Next Instruction: ", self.read_memory(self.PC));
       self.run(self._read_memory(self.PC++));
-      self.draw();
     }
+
+    self.draw();
 
     if (!self.running) {
       clearInterval(self.loop_id);

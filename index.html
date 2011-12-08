@@ -17,7 +17,7 @@
 	<script type="text/javascript" charset="utf-8">
 		window.onload = function(){
 			var appleScreen = document.getElementById("screen");
-			a = new AppleToo({compatibility: true});
+			a = new AppleToo({compatibility: false});
 			appleScreen.width = a.pixel_w * 40;
 			appleScreen.height = a.pixel_h * 24;
 			a.write_memory(0x427, 0xFF);

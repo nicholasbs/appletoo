@@ -116,20 +116,21 @@ AppleToo.prototype.run6502 = function(program, pc) {
 AppleToo.prototype.run_loop = function() {
   this.running = true;
 
+  // XXX REMOVE ME
+  this.PC = this.read_word(0xFFFC)
+
   var self = this;
-  this.while_loop = setInterval(function() {
+  this.loop_id = setInterval(function() {
     var cycles = self.cycles;
-    while (self.cycles < cycles + 100) {
+    while (self.cycles < cycles + 3000) {
       //this.print_registers();
-      //console.log("Next Instruction:",this.read_memory(this.PC));
+      //console.log("Next Instruction: ", self.read_memory(self.PC));
       self.run(self._read_memory(self.PC++));
       self.draw();
     }
 
-    console.log("Next Instruction:",self.read_memory(self.PC));
-
     if (!self.running) {
-      clearInterval(self.while_loop);
+      clearInterval(self.loop_id);
     }
   });
 };

@@ -5,11 +5,11 @@
 	<title>AppleToo.js</title>
 	<script src="appletoo.js"></script>
 	<style type="text/css" media="screen">
-		/*canvas {
-			width: 280px;
-			height: 192px;
-			background-color: blue;
-		}*/
+		canvas {
+			border: 1px solid #DDD;
+			margin: 0 auto;
+			display: block;
+		}
 		body {
 			background-color: #222;
 		}
@@ -20,14 +20,10 @@
 			a = new AppleToo({compatibility: false});
 			appleScreen.width = a.pixel_w * 40;
 			appleScreen.height = a.pixel_h * 24;
-			a.write_memory(0x427, 0xFF);
-			//a.run6502("a9 00");
 		};
 	</script>
 </head>
 <body>
-	<div id="container">
-		<canvas id="screen"></canvas>
-	</div>
+	<canvas id="screen"></canvas>
 </body>
 </html>

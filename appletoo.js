@@ -17,20 +17,23 @@ var AppleToo = function(options) {
 
   this.COMPATIBILITY_MODE = options.compatibility;
 
-  var screen = document.getElementById(options.screen)
-  if (screen) {
-    this.ctx = screen.getContext("2d");
-  }
-  this.display = !!screen;
-  this.display_mode = DISPLAY_MODES.lowres;
   this.pixel_w = 21;
   this.pixel_h = 24;
+  this.screen = document.getElementById(options.screen);
+  if (this.screen) {
+    this.ctx = this.screen.getContext("2d");
+  }
+  this.display = !!this.screen;
 
   this.running = true;
 
   this.cycles = 0;
 
   this.initialize_memory();
+};
+
+AppleToo.COLORS = {
+  green: "#00FF00"
 };
 
 AppleToo.prototype.load_memory = function(addr, data) {
@@ -47,45 +50,21 @@ var default_options = {
   rom: null
 };
 
-var ROW_ADDR = [ //See Figure 2-5 of Apple IIe Technical Reference
-  0x400,
-  0x480,
-  0x500,
-  0x580,
-  0x600,
-  0x680,
-  0x700,
-  0x780,
-  0x428,
-  0x4A8,
-  0x528,
-  0x5A8,
-  0x628,
-  0x6A8,
-  0x728,
-  0x7A8,
-  0x450,
-  0x4D0,
-  0x550,
-  0x5D0,
-  0x650,
-  0x6D0,
-  0x750,
-  0x7D0
-];
-var DISPLAY_MODES = {
-  lowres: 0
-};
 AppleToo.prototype.draw = function() {
   if (!this.display) { return; }
+  this.screen.width = this.screen.width; //Clear Screen (This will be very slow in FF)
   for (var row = 0; row < 24; row++) {
     for (var col = 0; col < 40; col++) {
-      if (this.display_mode === DISPLAY_MODES.lowres) {
-        var val = this._read_memory(ROW_ADDR[row] + col),
+      if (this.display_mode === "graphics") {
+        var val = this._read_memory(ROW_ADDR[this.display_page][row] + col),
             top = (val & 0xF0) >> 4,
             bottom = val & 0x0F;
-            //console.log("Row: ",row,"Col: ",col,"Top: ",top,"Bottom: ",bottom);
+
         this.draw_pixel(row, col, top, bottom);
+      } else if (this.display_mode === "text") {
+        var val = this._read_memory(ROW_ADDR[this.display_page][row] + col);
+
+        this.draw_lowtext(row, col, val);
       }
     }
   }
@@ -95,22 +74,65 @@ AppleToo.prototype.draw_pixel = function(row, col, top, bottom) {
   var x = col * this.pixel_w,
       y = row * this.pixel_h;
 
-      //console.log("X",x,"Y",y);
-  this.ctx.fillStyle = top == 0 ? "black" : "green";
+  this.ctx.fillStyle = top == 0 ? "black" : AppleToo.COLORS.green;
   this.ctx.fillRect(x, y, this.pixel_w, this.pixel_h/2);
 
-  this.ctx.fillStyle = bottom == 0 ? "black" : "green";
+  this.ctx.fillStyle = bottom == 0 ? "black" : AppleToo.COLORS.green;
   this.ctx.fillRect(x, y + this.pixel_h/2, this.pixel_w, this.pixel_h/2);
 };
 
-//TODO Clean up this method
+AppleToo.prototype.draw_lowtext = function(row, col, char) {
+  var x = col * this.pixel_w,
+      y = row * this.pixel_h + this.pixel_h;
+
+  if (char == 255) console.log("Delete");
+  if (typeof char === "number") {
+    char = String.fromCharCode(char & 0x7F);
+  }
+  this.ctx.font = (this.pixel_h * (7/8)) + " px Monaco";
+  this.ctx.fillStyle = char == "" ? "black" : AppleToo.COLORS.green;
+  this.string_log += char;
+  this.ctx.fillText(char, x, y);
+};
+
+AppleToo.prototype.update_soft_switch = function(addr) {
+  switch (addr) {
+    case 0xC050: //Graphics
+      this.display_mode = "graphics";
+      this._write_memory(0xC01A, 0x00);
+      break;
+    case 0xC051: //Text
+      this.display_mode = "text";
+      this._write_memory(0xC01A, 0xFF);
+      break;
+    case 0xC052: //Full Graphics
+      this.display_split = "full";
+      break;
+    case 0xC053: //Split Screen
+      this.display_split = "split";
+      break;
+    case 0xC054: //Page one
+      this.display_page = 0;
+      this._write_memory(0xC01C, 0x00);
+      break;
+    case 0xC055: //Page two
+      this.display_page = 1;
+      this._write_memory(0xC01C, 0xFF);
+      break;
+    case 0xC056: //Low Res
+      this.display_res = "low";
+      break;
+    case 0xC057: //High Res
+      this.display_res = "high";
+      break;
+  }
+};
+
 AppleToo.prototype.run6502 = function(program, pc) {
   this.PC = pc === undefined ? 0xC000 : pc;
-  var opcode;
 
   this.load_memory(0xC000, program);
   this.run_loop();
-  //this.print_registers();
 };
 
 AppleToo.prototype.run_loop = function() {
@@ -123,8 +145,6 @@ AppleToo.prototype.run_loop = function() {
   this.loop_id = setInterval(function() {
     var cycles = self.cycles;
     while (self.cycles < cycles + 3000) {
-      //this.print_registers();
-      //console.log("Next Instruction: ", self.read_memory(self.PC));
       self.run(self._read_memory(self.PC++));
     }
 
@@ -238,6 +258,7 @@ AppleToo.prototype.read_memory = function(loc, word) {
 };
 
 AppleToo.prototype._read_memory = function(loc) {
+  this.update_soft_switch(loc);
   return this.memory[loc];
 };
 
@@ -245,6 +266,7 @@ AppleToo.prototype.write_memory = function(loc, val) {
   if (typeof loc === "string") loc = parseInt(loc, 16);
   if (typeof val === "string") val = parseInt(val, 16);
 
+  this.update_soft_switch(loc);
   if (val < 0) {
     throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
   } else if (val <= 255 ) {
@@ -260,6 +282,9 @@ AppleToo.prototype._write_memory = function(loc, val) {
   if (typeof loc === "string") {
     loc = parseInt(loc, 16);
   }
+
+  this.update_soft_switch(loc);
+
   if (val < 0) {
     throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
   } else if (val <= 255 ) {
@@ -740,6 +765,61 @@ var SR_FLAGS = {
   "Z" : 2,
   "C" : 1
 };
+
+var ROW_ADDR = [ //See Figure 2-5 of Apple IIe Technical Reference
+  [ //Page One
+    0x400,
+    0x480,
+    0x500,
+    0x580,
+    0x600,
+    0x680,
+    0x700,
+    0x780,
+    0x428,
+    0x4A8,
+    0x528,
+    0x5A8,
+    0x628,
+    0x6A8,
+    0x728,
+    0x7A8,
+    0x450,
+    0x4D0,
+    0x550,
+    0x5D0,
+    0x650,
+    0x6D0,
+    0x750,
+    0x7D0
+  ],
+  [ //Page Two
+    0x800,
+    0x880,
+    0x900,
+    0x980,
+    0xA00,
+    0xA80,
+    0xB00,
+    0xB80,
+    0x828,
+    0x8A8,
+    0x928,
+    0x9A8,
+    0xA28,
+    0xAA8,
+    0xB28,
+    0xBA8,
+    0x850,
+    0x8D0,
+    0x950,
+    0x9D0,
+    0xA50,
+    0xAD0,
+    0xB50,
+    0xBD0
+  ]
+];
 
 // Utilities
 function zero_pad(n, len, base) {

@@ -17,8 +17,11 @@ var AppleToo = function(options) {
 
   this.COMPATIBILITY_MODE = options.compatibility;
 
-  this.pixel_w = 21;
-  this.pixel_h = 24;
+  this.pixel_w = 3;
+  this.pixel_h = 3;
+  this.char_w = this.pixel_w * 7;
+  this.char_h = this.pixel_h * 8;
+
   this.screen = document.getElementById(options.screen);
   if (this.screen) {
     this.ctx = this.screen.getContext("2d");
@@ -50,6 +53,7 @@ var default_options = {
   rom: null
 };
 
+// TODO: Make this less horrible?
 AppleToo.prototype.draw = function() {
   if (!this.display) { return; }
   this.screen.width = this.screen.width; //Clear Screen (This will be very slow in FF)
@@ -71,25 +75,25 @@ AppleToo.prototype.draw = function() {
 };
 
 AppleToo.prototype.draw_pixel = function(row, col, top, bottom) {
-  var x = col * this.pixel_w,
-      y = row * this.pixel_h;
+  var x = col * this.char_w,
+      y = row * this.char_h;
 
   this.ctx.fillStyle = top == 0 ? "black" : AppleToo.COLORS.green;
-  this.ctx.fillRect(x, y, this.pixel_w, this.pixel_h/2);
+  this.ctx.fillRect(x, y, this.char_w, this.char_h/2);
 
   this.ctx.fillStyle = bottom == 0 ? "black" : AppleToo.COLORS.green;
-  this.ctx.fillRect(x, y + this.pixel_h/2, this.pixel_w, this.pixel_h/2);
+  this.ctx.fillRect(x, y + this.char_h/2, this.char_w, this.char_h/2);
 };
 
 AppleToo.prototype.draw_lowtext = function(row, col, char) {
-  var x = col * this.pixel_w,
-      y = row * this.pixel_h + this.pixel_h;
+  var x = col * this.char_w,
+      y = row * this.char_h + this.char_h;
 
   if (char == 255) console.log("Delete");
   if (typeof char === "number") {
     char = String.fromCharCode(char & 0x7F);
   }
-  this.ctx.font = (this.pixel_h * (7/8)) + " px Monaco";
+  this.ctx.font = (this.char_h * (7/8)) + " px Monaco";
   this.ctx.fillStyle = char == "" ? "black" : AppleToo.COLORS.green;
   this.string_log += char;
   this.ctx.fillText(char, x, y);
@@ -121,9 +125,11 @@ AppleToo.prototype.update_soft_switch = function(addr) {
       break;
     case 0xC056: //Low Res
       this.display_res = "low";
+      this._write_memory(0xC01D, 0x00);
       break;
     case 0xC057: //High Res
       this.display_res = "high";
+      this._write_memory(0xC01D, 0xFF);
       break;
   }
 };

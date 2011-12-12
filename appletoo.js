@@ -76,12 +76,12 @@ AppleToo.prototype.draw = function() {
     }
   } else {
     for (var row = 0; row < 192; row++) { //192 = 24 Char Rows * 8 Pixel Rows
-      var row_data = this.ctx.createImageData(a.pixel_w * 7 * 40, a.pixel_h),
+      var row_data = this.ctx.createImageData(this.pixel_w * 280, this.pixel_h), // 7 pixels * 40 cols
           pixels = row_data.data,
           row_offset = HIGH_RES_ROW_ADDR[this.display_page][row];
       for (var byte = 0; byte < 40; byte++) {
         var val = this._read_memory(row_offset + byte);
-        this.byte_to_rgba(val, pixels, byte * 7 * 4); //7 pixels times 4 elements RGBA
+        this.byte_to_rgba(val, pixels, byte * 7 * 4 * this.pixel_w); //7 pixels times 4 elements RGBA
       }
       a.ctx.putImageData(row_data, 0, row * this.pixel_h);
     }

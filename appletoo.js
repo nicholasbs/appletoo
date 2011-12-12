@@ -76,7 +76,7 @@ AppleToo.prototype.draw = function() {
     }
   } else {
     for (var row = 0; row < 192; row++) { //192 = 24 Char Rows * 8 Pixel Rows
-      var row_data = this.ctx.createImageData(this.pixel_w * 280, this.pixel_h), // 7 pixels * 40 cols
+      var row_data = this.ctx.createImageData(this.pixel_w * 280, 1), // 7 pixels * 40 cols
           pixels = row_data.data,
           row_offset = HIGH_RES_ROW_ADDR[this.display_page][row];
       for (var byte = 0; byte < 40; byte++) {
@@ -84,6 +84,8 @@ AppleToo.prototype.draw = function() {
         this.byte_to_rgba(val, pixels, byte * 7 * 4 * this.pixel_w); //7 pixels times 4 elements RGBA
       }
       a.ctx.putImageData(row_data, 0, row * this.pixel_h);
+      a.ctx.putImageData(row_data, 0, row * this.pixel_h + 1);
+      a.ctx.putImageData(row_data, 0, row * this.pixel_h + 2);
     }
   }
 };
@@ -133,18 +135,14 @@ var HIGH_RES_ROW_ADDR = [[],[]];
 })();
 
 AppleToo.prototype.byte_to_rgba = function(byte, pixels, index) {
-  var p,
-      offset = this.char_w * 40 * 4;
-  for (var row = 0; row < this.pixel_h; row++) {
-    for (var i = 0; i < 7; i++) {
-      p = (byte >> i) & 1;
-      var foo = (offset * row) +index + (i * 4);
-      for (var k = 0; k < this.pixel_w * 4; k+=4 ) {
-        pixels[foo + k] = 0;
-        pixels[foo + 1 + k] = (p * 0xFF);
-        pixels[foo + 2 + k] = 0;
-        pixels[foo + 3 + k] = 0xFF;
-      }
+  for (var i = 0; i < 7; i++) {
+    var on = (byte >> i) & 1,
+        offset = index + (i * 4 * this.pixel_w);
+    for (var k = 0; k < this.pixel_w * 4; k+=4 ) {
+      pixels[offset + k] = 0;               //Red
+      pixels[offset + 1 + k] = (on * 0xFF); //Green
+      pixels[offset + 2 + k] = 0;           //Blue
+      pixels[offset + 3 + k] = 0xFF;        //Alpha
     }
   }
 };

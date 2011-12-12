@@ -134,13 +134,12 @@ var HIGH_RES_ROW_ADDR = [[],[]];
 
 AppleToo.prototype.byte_to_rgba = function(byte, pixels, index) {
   var p,
-      offset = this.char_w * 40 * 4,
-      repeat = this.pixel_h;
-  for (var j = 0; j < repeat; j++) {
+      offset = this.char_w * 40 * 4;
+  for (var row = 0; row < this.pixel_h; row++) {
     for (var i = 0; i < 7; i++) {
       p = (byte >> i) & 1;
-      var foo = (offset * j) +index + i
-      for (var k = 0; k < 12; k+=4 ) {
+      var foo = (offset * row) +index + (i * 4);
+      for (var k = 0; k < this.pixel_w * 4; k+=4 ) {
         pixels[foo + k] = 0;
         pixels[foo + 1 + k] = (p * 0xFF);
         pixels[foo + 2 + k] = 0;
@@ -174,8 +173,6 @@ AppleToo.prototype.draw_lowtext = function(row, col, char) {
   this.string_log += char;
   this.ctx.fillText(char, x, y);
 };
-
-AppleToo.prototype
 
 AppleToo.prototype.update_soft_switch = function(addr) {
   switch (addr) {
@@ -237,7 +234,7 @@ AppleToo.prototype.run_loop = function() {
     if (!self.running) {
       clearInterval(self.loop_id);
     }
-  });
+  },20);
 };
 
 AppleToo.prototype.run = function(opcode) {

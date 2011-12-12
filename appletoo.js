@@ -88,15 +88,50 @@ AppleToo.prototype.draw = function() {
   }
 };
 
+/* See page 35 of the Apple IIe Technical Reference Manual
+ * We use these offests to generate the 192 pixel rows for display page one and the
+ * 192 pixel rows for display page two. */
+var HIGH_RES_CHAR_ROW_OFFSETS = [
+  0x2000, // row 0
+  0x2080,
+  0x2100,
+  0x2180,
+  0x2200,
+  0x2280,
+  0x2300,
+  0x2380,
+  0x2028,
+  0x20A8,
+  0x2128,
+  0x21A8,
+  0x2228,
+  0x22A8,
+  0x2328,
+  0x23A8,
+  0x2050,
+  0x20D0,
+  0x2150,
+  0x21D0,
+  0x2250,
+  0x22D0,
+  0x2350,
+  0x23D0 // row 23
+];
+
 var HIGH_RES_ROW_ADDR = [[],[]];
 (function () {
   var page_offset = 0x2000;
-  for (var page = 1; page < 3; page++){
-    for (var row = 0; row < 192; row++) {
-      HIGH_RES_ROW_ADDR[page - 1].push(page_offset * page + (row % 8) * 0x400 + Math.floor(row/8) * 0x80);
+  for (var page = 0; page < 2; page++){
+    for (var pixel_row = 0; pixel_row < 192; pixel_row++) {
+      var addr = page_offset * page; // Beginning of display page
+      addr += HIGH_RES_CHAR_ROW_OFFSETS[Math.floor(pixel_row / 8)]; // Offset for char row
+      addr += pixel_row % 8 * 0x400; // Offset for pixel row
+
+      HIGH_RES_ROW_ADDR[page].push(addr);
     }
   };
 })();
+
 AppleToo.prototype.byte_to_rgba = function(byte, pixels, index) {
   var p,
       offset = this.char_w * 40 * 4,

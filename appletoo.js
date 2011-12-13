@@ -517,7 +517,7 @@ AppleToo.prototype.inc_dec_register = function(register, val) {
   this.update_zero_and_neg_flags(this[register]);
 };
 AppleToo.prototype.inc_dec_memory = function(addr, val) {
-  var result = this._read_memory(addr) + val;
+  var result = (this._read_memory(addr) + val) & 0xFF;
   this._write_memory(addr, result);
   this.update_zero_and_neg_flags(result);
 };

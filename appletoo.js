@@ -510,8 +510,10 @@ AppleToo.prototype.sbc = function(addr) {
   this.update_zero_and_neg_flags(result);
   this.AC = result & 0xFF;
 };
+/* Only to be used with 8-bit registers (i.e., anything but the PC) */
 AppleToo.prototype.inc_dec_register = function(register, val) {
   this[register] += val;
+  this[register] &= 0xFF;
   this.update_zero_and_neg_flags(this[register]);
 };
 AppleToo.prototype.inc_dec_memory = function(addr, val) {

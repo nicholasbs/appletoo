@@ -223,7 +223,7 @@ AppleToo.prototype.run_loop = function() {
   var self = this;
   this.loop_id = setInterval(function() {
     var cycles = self.cycles;
-    while (self.cycles < cycles + 3000) {
+    while (self.cycles < cycles + 10000) {
       self.run(self._read_memory(self.PC++));
     }
 

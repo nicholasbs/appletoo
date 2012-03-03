@@ -28,12 +28,15 @@
  */
 
 
-var DiskToo = function(appleToo) {
+var DiskToo = function(appleToo, numDrives) {
   this.appleToo = appleToo;
   this.drives = [];
-  this.tracks = [];
-  this.phase = 0;
   this.currentDrive = 0;
+  this.latch = 0;
+
+  for (var i = 0; i < numDrives.length; i++) {
+    this.drives.push({phase: 0});
+  }
 };
 
 DiskToo.prototype.readDisk = function(diskData) {
@@ -45,6 +48,10 @@ DiskToo.prototype.readDisk = function(diskData) {
   }
 };
 
+var Disk = function() {
+  this.track = 0;
+  this.sector = 0;
+};
 
 function encode44(byte) {
   var evenByte = (byte | 0xAA),

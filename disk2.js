@@ -135,7 +135,7 @@ DiskII.prototype.ioRead = function(address) {
   return rand.nextInt(256); // TODO: floating bus
 }
 
-DiskII.prototype. = fcuntion(address, value) {
+DiskII.prototype.ioWrite = function(address, value) {
   switch (address & 0xf) {
     case 0x0:
     case 0x1:
@@ -301,7 +301,7 @@ function readDiskString(dataStr) {
  // var data = dataStr.replace(/\s+/g,"").match(/../g).map(function(n) {
  //   return parseInt(n, 16);
  // });
-  var dataStrs = dataStr.replace(/\s+/g, "").match(/.{512}/g);
+  var dataStrs = dataStr.replace(/\s+/g, "").match(/.{8192}/g);
   var tracks = dataStrs.reduce(function(acc, track) {
     acc.push(track.match(/../g).map(function(n) { 
       return parseInt(n, 16);

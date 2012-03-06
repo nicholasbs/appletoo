@@ -32,8 +32,8 @@ var DiskII = function(apple) {
   this.gcrNibbles = [];
   this.gcrNibblesPos = 0;
 
-  this.readDisk(0, null, "", false, DEFAULT_VOLUME);
-  this.readDisk(1, null, "", false, DEFAULT_VOLUME);
+  // this.readDisk(0, null, "", false, DEFAULT_VOLUME);
+  // this.readDisk(1, null, "", false, DEFAULT_VOLUME);
 };
 
 DiskII.ROM = [
@@ -188,28 +188,143 @@ DiskII.prototype.reset = function() {
 };
 
 
-DiskII.prototype.readDisk = function(drive, is, name, isWriteProtected, volumeNumber) {
-  for (var trackNum = 0; trackNum < DiskII.DOS_NUM_TRACKS; trackNum++) {
-    this.diskData[this.drive][trackNum] = zeroArray(DiskII.RAW_TRACK_BYTES);
+// DiskII.prototype.readDisk = function(drive, is, name, isWriteProtected, volumeNumber) {
+//   for (var trackNum = 0; trackNum < DiskII.DOS_NUM_TRACKS; trackNum++) {
+//     this.diskData[this.drive][trackNum] = zeroArray(DiskII.RAW_TRACK_BYTES);
+// 
+//     if (is != null) {
+//       if (nib)
+//       {
+//         is.readFully(diskData[drive][trackNum], 0, RAW_TRACK_BYTES);
+//       }
+//       else
+//       {
+//         is.readFully(track, 0, DOS_TRACK_BYTES);
+//         trackToNibbles(track, diskData[drive][trackNum], volumeNumber, trackNum, !proDos);
+//       }
+//     }
+//   }
+// 
+//   this.realTrack = diskData[drive][currPhysTrack >> 1];
+//   this.isWriteProtected[drive] = isWriteProtected;
+//   
+//   return true;
+// }
 
-    if (is != null) {
-      if (nib)
-      {
-        is.readFully(diskData[drive][trackNum], 0, RAW_TRACK_BYTES);
-      }
-      else
-      {
-        is.readFully(track, 0, DOS_TRACK_BYTES);
-        trackToNibbles(track, diskData[drive][trackNum], volumeNumber, trackNum, !proDos);
-      }
-    }
+DiskII.prototype.readDiskString = function(dataStr) {
+  var dataStrs = dataStr.replace(/\s+/g, "").match(/.{8192}/g);
+  this.diskData = dataStrs.reduce(function(acc, trackString, i) {
+    var nibbleTrack, track = (trackString.match(/../g).map(function(n) { 
+      return parseInt(n, 16);
+    }));
+    acc.push((nibbleTrack = []));
+    this.trackToNibbles(track, nibbleTrack, i);
+    return acc;
+  }.bind(this), []);
+};
+
+DiskII.prototype.trackToNibbles = function(track, nibbles, volumeNum, trackNum) {
+  this.gcrNibbles = nibbles;
+  this.gcrNibblesPos = 0;
+
+  for (var sectorNum = 0; sectorNum < DiskII.DOS_NUM_SECTORS; sectorNum++) {
+    this.encode62(track, this.gcrLogicalDos33Sector[sectorNum] << 8);
+    this.writeSync(12);
+    this.writeAddressField(volumeNum, trackNum, sectorNum);
+    this.writeSync(8);
+    this.writeDataField();
+  }
+  this.writeNibbles(0x7F, DiskII.RAW_TRACK_BYTES - this.gcrNibblesPos); // invalid nibbles to skip on read
+}
+
+DiskII.prototype.encode62 = function(track, offset) {
+  // 86 * 3 = 258, so the first two byte are encoded twice
+  this.gcrBuffer2[0] = this.gcrSwapBit[track[offset + 1] & 0x03];
+  this.gcrBuffer2[1] = this.gcrSwapBit[track[offset] & 0x03];
+
+  // Save higher 6 bits in gcrBuffer and lower 2 bits in gcrBuffer2
+  for (var i = 255, j = 2; i >= 0; i--, j = j == 85 ? 0: j + 1) {
+     this.gcrBuffer2[j] = ((this.gcrBuffer2[j] << 2) | this.gcrSwapBit[track[offset + i] & 0x03]);
+     this.gcrBuffer[i] = (track[offset + i] & 0xff)  >> 2;
+  }
+   
+  // Clear off higher 2 bits of GCR_buffer2 set in the last call
+  for (var i = 0; i < 86; i++)
+     this.gcrBuffer2[i] &= 0x3f;
+};
+
+DiskII.prototype.encode44 = function(value) {
+  this.gcrWriteNibble((value >> 1) | 0xaa);
+  this.gcrWriteNibble(value | 0xaa);
+}
+
+DiskII.prototype.writeSync = function(length) {
+  this.writeNibbles(0xff, length);
+}
+
+DiskII.prototype.writeNibbles = function(nibble, length) {
+  while(length > 0) {
+    length--;
+    this.gcrWriteNibble(nibble);
+  }
+}
+
+DiskII.prototype.gcrWriteNibble = function(value) {
+  this.gcrNibbles[this.gcrNibblesPos] = value;
+  this.gcrNibblesPos++;
+}
+
+DiskII.prototype.writeAddressField = function(volumeNum, trackNum, sectorNum) {
+  // Write address mark
+  this.gcrWriteNibble(0xd5);
+  this.gcrWriteNibble(0xaa);
+  this.gcrWriteNibble(0x96);
+   
+  // Write volume, trackNum, sector & checksum
+  this.encode44(volumeNum);
+  this.encode44(trackNum);
+  this.encode44(sectorNum);
+  this.encode44(volumeNum ^ trackNum ^ sectorNum);
+   
+  // Write epilogue
+  this.gcrWriteNibble(0xde);
+  this.gcrWriteNibble(0xaa);
+  this.gcrWriteNibble(0xeb);
+}
+
+DiskII.prototype.writeDataField = function() {
+  var last = 0;
+  var checksum;
+
+  // Write prologue
+  this.gcrWriteNibble(0xd5);
+  this.gcrWriteNibble(0xaa);
+  this.gcrWriteNibble(0xad);
+
+  // Write GCR encoded data
+  for(var i = 0x55; i >= 0; i--) {
+    checksum = last ^ this.gcrBuffer2[i];
+    this.gcrWriteNibble(DiskII.GCR_ENCODING_TABLE[checksum]);
+    last = this.gcrBuffer2[i];
+  }
+  for(var i = 0; i < 256; i++) {
+    checksum = last ^ this.gcrBuffer[i];
+    this.gcrWriteNibble(DiskII.GCR_ENCODING_TABLE[checksum]);
+    last = this.gcrBuffer[i];
   }
 
-  this.realTrack = diskData[drive][currPhysTrack >> 1];
-  this.isWriteProtected[drive] = isWriteProtected;
-  
-  return true;
+  // Write checksum
+  this.gcrWriteNibble(DiskII.GCR_ENCODING_TABLE[last]);
+
+  // Write epilogue
+  this.gcrWriteNibble(0xde);
+  this.gcrWriteNibble(0xaa);
+  this.gcrWriteNibble(0xeb);
 }
+
+
+
+
 /*
 	try {
 			var track = [],
@@ -297,17 +412,4 @@ function zeroArray(length) {
   return zeros;
 }
 
-function readDiskString(dataStr) {
- // var data = dataStr.replace(/\s+/g,"").match(/../g).map(function(n) {
- //   return parseInt(n, 16);
- // });
-  var dataStrs = dataStr.replace(/\s+/g, "").match(/.{8192}/g);
-  var tracks = dataStrs.reduce(function(acc, track) {
-    acc.push(track.match(/../g).map(function(n) { 
-      return parseInt(n, 16);
-    }));
-    return acc;
-  }, []);
-  return tracks;
-}
-// vim: expandtab:ts=2:sw=2
+

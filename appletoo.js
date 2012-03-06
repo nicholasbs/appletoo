@@ -27,6 +27,7 @@ var AppleToo = function(options) {
     this.ctx = this.screen.getContext("2d");
   }
   this.display = !!this.screen;
+  this.display_page = 0;
 
   this.running = true;
 
@@ -57,19 +58,91 @@ var default_options = {
 AppleToo.prototype.draw = function() {
   if (!this.display) { return; }
   this.screen.width = this.screen.width; //Clear Screen (This will be very slow in FF)
-  for (var row = 0; row < 24; row++) {
-    for (var col = 0; col < 40; col++) {
-      if (this.display_mode === "graphics") {
-        var val = this._read_memory(ROW_ADDR[this.display_page][row] + col),
-            top = (val & 0xF0) >> 4,
-            bottom = val & 0x0F;
+  if (this.display_res === "low") {
+    for (var row = 0; row < 24; row++) {
+      for (var col = 0; col < 40; col++) {
+        if (this.display_mode === "graphics") {
+          var val = this._read_memory(ROW_ADDR[this.display_page][row] + col),
+              top = (val & 0xF0) >> 4,
+              bottom = val & 0x0F;
 
-        this.draw_pixel(row, col, top, bottom);
-      } else if (this.display_mode === "text") {
-        var val = this._read_memory(ROW_ADDR[this.display_page][row] + col);
+          this.draw_pixel(row, col, top, bottom);
+        } else if (this.display_mode === "text") {
+          var val = this._read_memory(ROW_ADDR[this.display_page][row] + col);
 
-        this.draw_lowtext(row, col, val);
+          this.draw_lowtext(row, col, val);
+        }
       }
+    }
+  } else {
+    for (var row = 0; row < 192; row++) { //192 = 24 Char Rows * 8 Pixel Rows
+      var row_data = this.ctx.createImageData(this.pixel_w * 280, 1), // 7 pixels * 40 cols
+          pixels = row_data.data,
+          row_offset = HIGH_RES_ROW_ADDR[this.display_page][row];
+      for (var byte = 0; byte < 40; byte++) {
+        var val = this._read_memory(row_offset + byte);
+        this.byte_to_rgba(val, pixels, byte * 7 * 4 * this.pixel_w); //7 pixels times 4 elements RGBA
+      }
+      for (var css_pixel_row = 0; css_pixel_row < this.pixel_h; css_pixel_row++) {
+        a.ctx.putImageData(row_data, 0, row * this.pixel_h + css_pixel_row);
+      }
+    }
+  }
+};
+
+/* See page 35 of the Apple IIe Technical Reference Manual
+ * We use these offests to generate the 192 pixel rows for display page one and the
+ * 192 pixel rows for display page two. */
+var HIGH_RES_CHAR_ROW_OFFSETS = [
+  0x2000, // row 0
+  0x2080,
+  0x2100,
+  0x2180,
+  0x2200,
+  0x2280,
+  0x2300,
+  0x2380,
+  0x2028,
+  0x20A8,
+  0x2128,
+  0x21A8,
+  0x2228,
+  0x22A8,
+  0x2328,
+  0x23A8,
+  0x2050,
+  0x20D0,
+  0x2150,
+  0x21D0,
+  0x2250,
+  0x22D0,
+  0x2350,
+  0x23D0 // row 23
+];
+
+var HIGH_RES_ROW_ADDR = [[],[]];
+(function () {
+  var page_offset = 0x2000;
+  for (var page = 0; page < 2; page++){
+    for (var pixel_row = 0; pixel_row < 192; pixel_row++) {
+      var addr = page_offset * page; // Beginning of display page
+      addr += HIGH_RES_CHAR_ROW_OFFSETS[Math.floor(pixel_row / 8)]; // Offset for char row
+      addr += pixel_row % 8 * 0x400; // Offset for pixel row
+
+      HIGH_RES_ROW_ADDR[page].push(addr);
+    }
+  };
+})();
+
+AppleToo.prototype.byte_to_rgba = function(byte, pixels, index) {
+  for (var i = 0; i < 7; i++) {
+    var on = (byte >> i) & 1,
+        offset = index + (i * 4 * this.pixel_w);
+    for (var k = 0; k < this.pixel_w * 4; k+=4 ) {
+      pixels[offset + k] = 0;               //Red
+      pixels[offset + 1 + k] = (on * 0xFF); //Green
+      pixels[offset + 2 + k] = 0;           //Blue
+      pixels[offset + 3 + k] = 0xFF;        //Alpha
     }
   }
 };
@@ -87,20 +160,25 @@ AppleToo.prototype.draw_pixel = function(row, col, top, bottom) {
 
 AppleToo.prototype.draw_lowtext = function(row, col, char) {
   var x = col * this.char_w,
-      y = row * this.char_h + this.char_h;
+      y = row * this.char_h + this.char_h,
+      font = (this.char_h * (7/8)) + " px Monaco";
 
   if (char == 255) console.log("Delete");
   if (typeof char === "number") {
     char = String.fromCharCode(char & 0x7F);
   }
-  this.ctx.font = (this.char_h * (7/8)) + " px Monaco";
+  if (this.ctx.font != font) {
+    this.ctx.font = font;
+  }
   this.ctx.fillStyle = char == "" ? "black" : AppleToo.COLORS.green;
-  this.string_log += char;
   this.ctx.fillText(char, x, y);
 };
 
 AppleToo.prototype.update_soft_switch = function(addr) {
   switch (addr) {
+    case 0xC010: //Clear Keyboard Strobe
+      this._write_memory(0xC000, 0x00);
+      break;
     case 0xC050: //Graphics
       this.display_mode = "graphics";
       this._write_memory(0xC01A, 0x00);
@@ -145,12 +223,12 @@ AppleToo.prototype.run_loop = function() {
   this.running = true;
 
   // XXX REMOVE ME
-  this.PC = this.read_word(0xFFFC)
+  //this.PC = this.read_word(0xFFFC)
 
   var self = this;
   this.loop_id = setInterval(function() {
     var cycles = self.cycles;
-    while (self.cycles < cycles + 3000) {
+    while (self.cycles < cycles + 10000) {
       self.run(self._read_memory(self.PC++));
     }
 
@@ -159,7 +237,13 @@ AppleToo.prototype.run_loop = function() {
     if (!self.running) {
       clearInterval(self.loop_id);
     }
-  });
+  },20);
+};
+
+AppleToo.prototype.stopRunning = function() {
+  this.running = false;
+
+  clearInterval(this.loop_id);
 };
 
 AppleToo.prototype.run = function(opcode) {
@@ -437,12 +521,14 @@ AppleToo.prototype.sbc = function(addr) {
   this.update_zero_and_neg_flags(result);
   this.AC = result & 0xFF;
 };
+/* Only to be used with 8-bit registers (i.e., anything but the PC) */
 AppleToo.prototype.inc_dec_register = function(register, val) {
   this[register] += val;
+  this[register] &= 0xFF;
   this.update_zero_and_neg_flags(this[register]);
 };
 AppleToo.prototype.inc_dec_memory = function(addr, val) {
-  var result = this._read_memory(addr) + val;
+  var result = (this._read_memory(addr) + val) & 0xFF;
   this._write_memory(addr, result);
   this.update_zero_and_neg_flags(result);
 };

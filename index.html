@@ -11,7 +11,7 @@
 			display: block;
 		}
 		body {
-			background-color: #222;
+			background-color: #536EE4; /*#222;*/
 		}
 	</style>
 	<script type="text/javascript" charset="utf-8">
@@ -20,6 +20,30 @@
 			a = new AppleToo({compatibility: false});
 			appleScreen.width = a.char_w * 40;
 			appleScreen.height = a.char_h * 24;
+			document.onkeypress = function(e) {
+				console.log(e);
+				a._write_memory(0xC000, e.charCode + 128);
+			};
+			document.onkeydown = function(e) {
+				var value = 0;
+				switch (e.keyCode) {
+					case 37:
+						value = 8;
+						break;
+					case 38:
+						value = 11;
+						break;
+					case 39:
+						value = 21;
+						break;
+					case 40:
+						value = 10;
+						break;
+				}
+				if (e.keyCode > 36 && e.keyCode < 41){
+					a._write_memory(0xC000, value + 128);
+				}
+			};
 		};
 	</script>
 </head>

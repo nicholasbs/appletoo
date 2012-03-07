@@ -179,6 +179,70 @@ DiskII.prototype.ioWrite = function(address, value) {
   }
 };
 
+DiskII.prototype.update_soft_switch = function(address, value) {
+  switch (address & 0xf) {
+		case 0x0:
+		case 0x1:
+		case 0x2:			
+		case 0x3:
+		case 0x4:
+		case 0x5:
+		case 0x6:
+		case 0x7:
+			this.setPhase(address);
+			break;
+		case 0x8:
+			this.isMotorOn = false;
+			break;
+		case 0x9:
+			this.isMotorOn = true;
+			break;
+		case 0xa:
+			this.setDrive(0);
+			break;
+		case 0xb:
+			this.setDrive(1);
+			break;
+		case 0xc:
+			this.ioLatchC();
+			break;
+    case 0xd:
+      this.loadMode = true;
+			if (value === undefined && this.isMotorOn && !this.writeMode) {
+        this.latchData &= 0x7F;
+        // TODO: check phase - write protect is forced if phase 1 is on [F9.7]
+        if (this.isWriteProtected[this.drive]) {
+          this.latchData |= 0x80;
+        }
+      }
+      break;
+    case 0xe:
+      this.writeMode = false;
+      break;
+    case 0xf:
+      this.writeMode = true;
+      break;
+  }
+  
+  if (value !== undefined && this.isMotorOn && this.writeMode && this.loadMode) {
+    // any address writes latch for sequencer LD; OE1/2 irrelevant ['323 datasheet]
+    this.latchData = value;
+  }
+  if (value === undefined && (address & 1) == 0) {
+    // only even addresses return the latch
+    if (this.isMotorOn) {
+      return this.latchData;
+    }
+
+    // simple hack to fool DOS SAMESLOT drive spin check (usually at $BD34)
+    this.driveSpin = !this.driveSpin;
+    return this.driveSpin ? 0x7E : 0x7F;
+  }
+  return 0; // TODO: floating bus  
+}
+
+
+
 DiskII.prototype.memoryRead = function(address) {
   return this.ROM[address & 0xff];
 };
@@ -322,6 +386,70 @@ DiskII.prototype.writeDataField = function() {
   this.gcrWriteNibble(0xeb);
 }
 
+DiskII.prototype.setPhase = function(address) {
+  var phase;
+  
+  switch (address & 0xf) {
+    case 0x0:
+    case 0x2:			
+    case 0x4:
+    case 0x6:
+      // Q0, Q1, Q2, Q3 off
+      break;
+    case 0x1:
+      // Q0 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 1) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 3) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x3:
+      // Q1 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 2) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase == 0) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x5:
+      // Q2 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 3) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 1) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x7:
+      // Q3 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 0) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 2) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+  }
+};
 
 
 
@@ -411,5 +539,4 @@ function zeroArray(length) {
   }
   return zeros;
 }
-
 

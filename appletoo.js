@@ -15,6 +15,8 @@ var AppleToo = function(options) {
   this.SP = 0xFF;
   this.PC = 0xC000;
 
+  this.slots = new Array(8);
+
   this.COMPATIBILITY_MODE = options.compatibility;
 
   this.pixel_w = 3;
@@ -99,7 +101,11 @@ AppleToo.prototype.draw_lowtext = function(row, col, char) {
   this.ctx.fillText(char, x, y);
 };
 
-AppleToo.prototype.update_soft_switch = function(addr) {
+AppleToo.prototype.update_soft_switch = function(addr, val) {
+  if ((addr & 0xFF00) == 0xC000 && (addr & 0xFF) >= 0x90) {
+    var device = slots[(addr & 0x70) >> 4];
+    return device ? device.update_soft_switch(addr, val) : 0;
+  }
   switch (addr) {
     case 0xC050: //Graphics
       this.display_mode = "graphics";
@@ -131,7 +137,10 @@ AppleToo.prototype.update_soft_switch = function(addr) {
       this.display_res = "high";
       this._write_memory(0xC01D, 0xFF);
       break;
+    default:
+      return undefined;
   }
+  return 0;
 };
 
 AppleToo.prototype.run6502 = function(program, pc) {
@@ -253,6 +262,17 @@ AppleToo.prototype.initialize_memory = function() {
   }
 };
 
+AppleToo.MEM_ROM_EXTERNAL = 0x24000;
+
+AppleToo.prototype.setPeripheral = function(peripheral, slot) {
+  this.slots[slot] = peripheral;
+
+  var offset = AppleToo.MEM_ROM_EXTERNAL + (slot << 8);
+  for (var i = 0; i < 0x100; i++)
+    this.memory[offset + i] = peripheral.memoryRead(i);
+};
+
+//Not used, dead code?
 AppleToo.prototype.read_memory = function(loc, word) {
   if (typeof loc === "string") {
     loc = parseInt(loc, 16);
@@ -264,15 +284,18 @@ AppleToo.prototype.read_memory = function(loc, word) {
 };
 
 AppleToo.prototype._read_memory = function(loc) {
-  this.update_soft_switch(loc);
-  return this.memory[loc];
+  var soft_switch_data =  this.update_soft_switch(loc);
+  return soft_switch_data !== undefined ? soft_switch_data : this.memory[loc];
 };
 
 AppleToo.prototype.write_memory = function(loc, val) {
   if (typeof loc === "string") loc = parseInt(loc, 16);
   if (typeof val === "string") val = parseInt(val, 16);
 
-  this.update_soft_switch(loc);
+  if (this.update_soft_switch(loc, val) !== undefined) {
+    return;
+  }
+
   if (val < 0) {
     throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
   } else if (val <= 255 ) {
@@ -289,7 +312,9 @@ AppleToo.prototype._write_memory = function(loc, val) {
     loc = parseInt(loc, 16);
   }
 
-  this.update_soft_switch(loc);
+  if (this.update_soft_switch(loc, val) !== undefined) {
+    return;
+  }
 
   if (val < 0) {
     throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");

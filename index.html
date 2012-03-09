@@ -46,6 +46,9 @@
 					a._write_memory(0xC000, value + 128);
 				}
 			};
+
+			window.d = new DiskII(a);
+			a.setPeripheral(d, 1);
 		};
 	</script>
 </head>

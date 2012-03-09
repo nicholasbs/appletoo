@@ -244,7 +244,7 @@ DiskII.prototype.update_soft_switch = function(address, value) {
 
 
 DiskII.prototype.memoryRead = function(address) {
-  return this.ROM[address & 0xff];
+  return DiskII.ROM[address & 0xff];
 };
 
 DiskII.prototype.reset = function() {

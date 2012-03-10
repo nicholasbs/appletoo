@@ -178,7 +178,7 @@ AppleToo.prototype.draw_lowtext = function(row, col, char) {
 
 AppleToo.prototype.update_soft_switch = function(addr, val) {
   if ((addr & 0xFF00) == 0xC000 && (addr & 0xFF) >= 0x90) {
-    var device = slots[(addr & 0x70) >> 4];
+    var device = this.slots[(addr & 0x70) >> 4];
     return device ? device.update_soft_switch(addr, val) : 0;
   }
   switch (addr) {

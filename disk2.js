@@ -17,7 +17,7 @@ var DiskII = function(apple) {
 
   this.gcrSwapBit = [0,2,1,3];
   this.gcrBuffer = [];
-  this.gcrBuffer2 = [];    
+  this.gcrBuffer2 = [];
 
 	this.gcrLogicalDos33Sector = [
 		0x0, 0x7, 0xE, 0x6, 0xD, 0x5, 0xC, 0x4,
@@ -80,7 +80,7 @@ DiskII.prototype.ioRead = function(address) {
   switch (address & 0xf) {
 		case 0x0:
 		case 0x1:
-		case 0x2:			
+		case 0x2:
 		case 0x3:
 		case 0x4:
 		case 0x5:
@@ -120,7 +120,7 @@ DiskII.prototype.ioRead = function(address) {
       this.writeMode = true;
       break;
   }
-  
+
   if ((address & 1) == 0) {
     // only even addresses return the latch
     if (this.isMotorOn) {
@@ -139,7 +139,7 @@ DiskII.prototype.ioWrite = function(address, value) {
   switch (address & 0xf) {
     case 0x0:
     case 0x1:
-    case 0x2:			
+    case 0x2:
     case 0x3:
     case 0x4:
     case 0x5:
@@ -172,12 +172,74 @@ DiskII.prototype.ioWrite = function(address, value) {
       this.writeMode = true;
       break;
   }
-  
+
   if (this.isMotorOn && this.writeMode && this.loadMode) {
     // any address writes latch for sequencer LD; OE1/2 irrelevant ['323 datasheet]
     this.latchData = value;
   }
 };
+
+DiskII.prototype.update_soft_switch = function(address, value) {
+  switch (address & 0xf) {
+		case 0x0:
+		case 0x1:
+		case 0x2:
+		case 0x3:
+		case 0x4:
+		case 0x5:
+		case 0x6:
+		case 0x7:
+			this.setPhase(address);
+			break;
+		case 0x8:
+			this.isMotorOn = false;
+			break;
+		case 0x9:
+			this.isMotorOn = true;
+			break;
+		case 0xa:
+			this.setDrive(0);
+			break;
+		case 0xb:
+			this.setDrive(1);
+			break;
+		case 0xc:
+			this.ioLatchC();
+			break;
+    case 0xd:
+      this.loadMode = true;
+			if (value === undefined && this.isMotorOn && !this.writeMode) {
+        this.latchData &= 0x7F;
+        // TODO: check phase - write protect is forced if phase 1 is on [F9.7]
+        if (this.isWriteProtected[this.drive]) {
+          this.latchData |= 0x80;
+        }
+      }
+      break;
+    case 0xe:
+      this.writeMode = false;
+      break;
+    case 0xf:
+      this.writeMode = true;
+      break;
+  }
+
+  if (value !== undefined && this.isMotorOn && this.writeMode && this.loadMode) {
+    // any address writes latch for sequencer LD; OE1/2 irrelevant ['323 datasheet]
+    this.latchData = value;
+  }
+  if (value === undefined && (address & 1) == 0) {
+    // only even addresses return the latch
+    if (this.isMotorOn) {
+      return this.latchData;
+    }
+
+    // simple hack to fool DOS SAMESLOT drive spin check (usually at $BD34)
+    this.driveSpin = !this.driveSpin;
+    return this.driveSpin ? 0x7E : 0x7F;
+  }
+  return 0; // TODO: floating bus
+}
 
 DiskII.prototype.memoryRead = function(address) {
   return this.ROM[address & 0xff];
@@ -191,7 +253,7 @@ DiskII.prototype.reset = function() {
 // DiskII.prototype.readDisk = function(drive, is, name, isWriteProtected, volumeNumber) {
 //   for (var trackNum = 0; trackNum < DiskII.DOS_NUM_TRACKS; trackNum++) {
 //     this.diskData[this.drive][trackNum] = zeroArray(DiskII.RAW_TRACK_BYTES);
-// 
+//
 //     if (is != null) {
 //       if (nib)
 //       {
@@ -204,17 +266,17 @@ DiskII.prototype.reset = function() {
 //       }
 //     }
 //   }
-// 
+//
 //   this.realTrack = diskData[drive][currPhysTrack >> 1];
 //   this.isWriteProtected[drive] = isWriteProtected;
-//   
+//
 //   return true;
 // }
 
 DiskII.prototype.readDiskString = function(dataStr) {
   var dataStrs = dataStr.replace(/\s+/g, "").match(/.{8192}/g);
   this.diskData = dataStrs.reduce(function(acc, trackString, i) {
-    var nibbleTrack, track = (trackString.match(/../g).map(function(n) { 
+    var nibbleTrack, track = (trackString.match(/../g).map(function(n) {
       return parseInt(n, 16);
     }));
     acc.push((nibbleTrack = []));
@@ -247,7 +309,7 @@ DiskII.prototype.encode62 = function(track, offset) {
      this.gcrBuffer2[j] = ((this.gcrBuffer2[j] << 2) | this.gcrSwapBit[track[offset + i] & 0x03]);
      this.gcrBuffer[i] = (track[offset + i] & 0xff)  >> 2;
   }
-   
+
   // Clear off higher 2 bits of GCR_buffer2 set in the last call
   for (var i = 0; i < 86; i++)
      this.gcrBuffer2[i] &= 0x3f;
@@ -279,13 +341,13 @@ DiskII.prototype.writeAddressField = function(volumeNum, trackNum, sectorNum) {
   this.gcrWriteNibble(0xd5);
   this.gcrWriteNibble(0xaa);
   this.gcrWriteNibble(0x96);
-   
+
   // Write volume, trackNum, sector & checksum
   this.encode44(volumeNum);
   this.encode44(trackNum);
   this.encode44(sectorNum);
   this.encode44(volumeNum ^ trackNum ^ sectorNum);
-   
+
   // Write epilogue
   this.gcrWriteNibble(0xde);
   this.gcrWriteNibble(0xaa);
@@ -322,6 +384,70 @@ DiskII.prototype.writeDataField = function() {
   this.gcrWriteNibble(0xeb);
 }
 
+DiskII.prototype.setPhase = function(address) {
+  var phase;
+
+  switch (address & 0xf) {
+    case 0x0:
+    case 0x2:
+    case 0x4:
+    case 0x6:
+      // Q0, Q1, Q2, Q3 off
+      break;
+    case 0x1:
+      // Q0 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 1) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 3) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x3:
+      // Q1 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 2) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase == 0) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x5:
+      // Q2 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 3) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 1) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+    case 0x7:
+      // Q3 on
+      phase = this.currPhysTrack & 3;
+      if (phase === 0) {
+        if (this.currPhysTrack > 0)
+          this.currPhysTrack--;
+      } else if (phase === 2) {
+        if (this.currPhysTrack < ((2 * DiskII.DOS_NUM_TRACKS) - 1))
+          this.currPhysTrack++;
+      }
+      //System.out.println("half track=" + currPhysTrack);
+      this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+      break;
+  }
+};
 
 
 
@@ -330,7 +456,7 @@ DiskII.prototype.writeDataField = function() {
 			var track = [],
 			    proDos = false,
 			    nib = false;
-		
+
 			String lowerName = name.toLowerCase();
 			if (lowerName.indexOf(".2mg") != -1 || lowerName.indexOf(".2img") != -1)
 			{
@@ -341,7 +467,7 @@ DiskII.prototype.writeDataField = function() {
 				int headerSize = (header[0x09] << 8) | (header[0x08]);
 				if (headerSize != STANDARD_2IMG_HEADER_SIZE)
 					return false;
-				
+
 				int format = (header[0x0F] << 24) | (header[0x0E] << 16) | (header[0x0D] << 8) | (header[0x0C]);
 				if (format == 1)
 				{
@@ -358,12 +484,12 @@ DiskII.prototype.writeDataField = function() {
 				{
 					return false; // if not ProDOS, NIB or DSK
 				}
-				
+
 				// use write protected and volume number if present
 				int flags = (header[0x13] << 24) | (header[0x12] << 16) | (header[0x11] << 8) | (header[0x10]);
 				if ((flags & (1 << 31)) != 0)
 				{
-					isWriteProtected = true; // only override if set 
+					isWriteProtected = true; // only override if set
 				}
 				if ((flags & (1 << 8)) != 0)
 				{
@@ -395,11 +521,11 @@ DiskII.prototype.writeDataField = function() {
 
 			this.realTrack = diskData[drive][currPhysTrack >> 1];
 			this.isWriteProtected[drive] = isWriteProtected;
-			
+
 			return true;
 		} catch (IOException e) {
 		}
-	
+
 		return false;
 	}
 */
@@ -411,5 +537,4 @@ function zeroArray(length) {
   }
   return zeros;
 }
-
 

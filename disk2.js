@@ -241,6 +241,68 @@ DiskII.prototype.update_soft_switch = function(address, value) {
   return 0; // TODO: floating bus
 }
 
+DiskII.prototype.ioLatchC = function() {
+  this.loadMode = false;
+  if (!this.writeMode)
+  {
+    // Read data: C0xE, C0xC
+    this.latchData = (this.realTrack[this.currNibble] & 0xff);
+
+    // simple hack to help DOS find address prologues ($B94F)
+    if (/* fastDisk && */ // TODO: fastDisk property to enable/disable 
+      this.apple._read_memory(this.apple.PC + 3) == 0xD5 && // #$D5
+      this.apple._read_memory(this.apple.PC + 2) == 0xC9 && // CMP
+      this.apple._read_memory(this.apple.PC + 1) == 0xFB && // PC - 3
+      this.apple._read_memory(this.apple.PC + 0) == 0x10 &&  // BPL
+      this.latchData != 0xD5) 
+    {
+      var count = DiskII.RAW_TRACK_BYTES / 16;
+      do
+      {
+        this.currNibble++;
+        if (this.currNibble >= DiskII.RAW_TRACK_BYTES)
+          this.currNibble = 0;
+        this.latchData = (this.realTrack[this.currNibble] & 0xff);
+      }
+      while (this.latchData != 0xD5 && --count > 0);
+    }
+    // skip invalid nibbles we padded the track buffer with 
+    else if (this.latchData == 0x7F) // TODO: maybe the above covers this?
+    {
+      var count = DiskII.RAW_TRACK_BYTES / 16;
+      do
+      {
+        this.currNibble++;
+        if (this.currNibble >= DiskII.RAW_TRACK_BYTES)
+          this.currNibble = 0;
+        this.latchData = (this.realTrack[this.currNibble] & 0xff);
+      }
+      while (this.latchData == 0x7F && --count > 0);
+    }
+  }
+  else
+  {
+    // Write data: C0xD, C0xC
+    this.realTrack[this.currNibble] =  this.latchData;
+  }
+
+  this.currNibble++;
+  if (this.currNibble >= DiskII.RAW_TRACK_BYTES)
+    this.currNibble = 0;
+  // DEBUGGING
+  s.nodeValue = 'data: 0x' + this.latchData.toString(16) + '\ntrack: ' + (this.currPhysTrack >> 1) + '\nnibble: ' + this.currNibble;
+}
+
+
+DiskII.prototype.setDrive = function(newDrive) {
+  this.driveCurrPhysTrack[this.drive] = this.currPhysTrack;
+  this.drive = newDrive;
+  this.currPhysTrack = this.driveCurrPhysTrack[this.drive];
+  this.realTrack = this.diskData[this.drive][this.currPhysTrack >> 1];
+}
+
+
+
 DiskII.prototype.memoryRead = function(address) {
   return DiskII.ROM[address & 0xff];
 };
@@ -275,14 +337,14 @@ DiskII.prototype.reset = function() {
 
 DiskII.prototype.readDiskString = function(dataStr) {
   var dataStrs = dataStr.replace(/\s+/g, "").match(/.{8192}/g);
-  this.diskData = dataStrs.reduce(function(acc, trackString, i) {
-    var nibbleTrack, track = (trackString.match(/../g).map(function(n) {
+  this.diskData = [dataStrs.reduce(function(acc, trackString, i) {
+    var nibbleTrack, track = (trackString.match(/../g).map(function(n) { 
       return parseInt(n, 16);
     }));
     acc.push((nibbleTrack = []));
     this.trackToNibbles(track, nibbleTrack, i);
     return acc;
-  }.bind(this), []);
+  }.bind(this), [])];
 };
 
 DiskII.prototype.trackToNibbles = function(track, nibbles, volumeNum, trackNum) {

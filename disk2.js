@@ -19,7 +19,7 @@ var DiskII = function(apple) {
   this.gcrBuffer = [];
   this.gcrBuffer2 = [];
 
-	this.gcrLogicalDos33Sector = [
+  this.gcrLogicalDos33Sector = [
 		0x0, 0x7, 0xE, 0x6, 0xD, 0x5, 0xC, 0x4,
 		0xB, 0x3, 0xA, 0x2, 0x9, 0x1, 0x8, 0xF
   ];
@@ -537,4 +537,4 @@ function zeroArray(length) {
   }
   return zeros;
 }
-
+// vim: expandtab:ts=2:sw=2

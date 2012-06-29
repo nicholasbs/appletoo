@@ -987,6 +987,10 @@ function extend(base, add) {
 }
 
 function formatHex(number, len) {
+  if (typeof number === "undefined" || number == null || isNaN(number)) {
+    throw new Error("Invalid value \"" + number + "\" passed to formatHex()");
+  }
+
   var str = number.toString(16).toUpperCase();
 
   if (!len) {

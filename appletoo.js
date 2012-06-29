@@ -256,7 +256,13 @@ AppleToo.prototype.stopRunning = function() {
 };
 
 AppleToo.prototype.run = function(opcode) {
-  return OPCODES[opcode].call(this);
+  var op = OPCODES[opcode];
+  if (typeof op === "undefined") {
+    throw new Error("Found undefined opcode 0x" +  opcode.toString(16).toUpperCase() +
+      " at PC 0x" + this.PC.toString(16).toUpperCase());
+  } else {
+    return op.call(this);
+  }
 };
 
 AppleToo.prototype.immediate = function() {

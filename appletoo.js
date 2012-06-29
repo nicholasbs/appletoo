@@ -258,8 +258,8 @@ AppleToo.prototype.stopRunning = function() {
 AppleToo.prototype.run = function(opcode) {
   var op = OPCODES[opcode];
   if (typeof op === "undefined") {
-    throw new Error("Found undefined opcode 0x" +  opcode.toString(16).toUpperCase() +
-      " at PC 0x" + this.PC.toString(16).toUpperCase());
+    throw new Error("Found undefined opcode 0x" + formatHex(opcode, 2) +
+      " at 0x" + formatHex(this.PC, 4));
   } else {
     return op.call(this);
   }
@@ -985,4 +985,21 @@ function extend(base, add) {
   }
   return obj;
 }
+
+function formatHex(number, len) {
+  var str = number.toString(16).toUpperCase();
+
+  if (!len) {
+    if (str.length % 2 == 1) {
+      len = str.length+1;
+    }
+  }
+
+  while (str.length < len) {
+    str = "0" + str;
+  }
+
+  return str;
+}
+
 // vim: expandtab:ts=2:sw=2

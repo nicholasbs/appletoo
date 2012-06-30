@@ -1,0 +1,166 @@
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+	<title>AppleToo.js</title>
+	<script src="appletoo.js"></script>
+	<script src="disk2.js"></script>
+	<script src="disassembler.js"></script>
+
+	<link rel="stylesheet" href="CodeMirror-2.3/lib/codemirror.css">
+	<script src="CodeMirror-2.3/lib/codemirror.js"></script>
+	<script src="CodeMirror-2.3/mode/javascript/javascript.js"></script>
+
+	<style type="text/css" media="screen">
+		canvas {
+			border: 1px solid #DDD;
+			margin: 0 auto;
+			display: block;
+		}
+		body {
+			background-color: #000000; /*#222;*/
+		}
+		#control {
+			width: 820px; /*Same width as canvas */
+			border: 1px solid #DDD;
+			margin: 1em auto;
+			padding: 10px;
+			color: #EEEEEE;
+		}
+		#main {
+			float: left;
+		}
+		#editor_div {
+			float: left;
+			width: 350;
+			height: 578;
+			margin-left:20px;
+			background-color: #EEEEEE;
+		}
+		#hex_field {
+			width: 820px;
+			height: 100px;
+			background-color: #EEEEEE;
+		}
+		#start_field {
+			background-color: #EEEEEE;
+		}
+		label {
+			display: block;
+			margin-top: 5px;
+			margin-bottom: 5px;
+		}
+
+		.CodeMirror-scroll {
+			height: 578;
+			overflow-y: hidden;
+			overflow-x: hidden;
+		}
+	</style>
+	<script type="text/javascript" charset="utf-8">
+		window.onload = function() {
+			var appleScreen = document.getElementById("screen");
+			a = new AppleToo({compatibility: false});
+			appleScreen.width = a.char_w * 40;
+			appleScreen.height = a.char_h * 24;
+			document.onkeypress = function(e) {
+				console.log(e);
+				a._write_memory(0xC000, e.charCode + 128);
+			};
+			document.onkeydown = function(e) {
+				var value = 0;
+				switch (e.keyCode) {
+					case 37:
+						value = 8;
+						break;
+					case 38:
+						value = 11;
+						break;
+					case 39:
+						value = 21;
+						break;
+					case 40:
+						value = 10;
+						break;
+				}
+				if (e.keyCode > 36 && e.keyCode < 41){
+					a._write_memory(0xC000, value + 128);
+				}
+			};
+
+			window.d = new DiskII(a);
+			a.setPeripheral(d, 1);
+
+			var editor_div = document.getElementById("editor_div");
+			
+			mirror = CodeMirror(function (elt) {
+				editor_div.appendChild(elt);
+			}, 
+			{
+				lineNumbers: true,
+				readOnly: true
+			});
+		};
+
+		function load() {
+			var data = document.getElementById("hex_field").value;
+			var hex_location = document.getElementById("start_field").value;
+
+			var parsed_hex_loc = parseInt(hex_location, 16);
+
+			a.load_memory(parsed_hex_loc, data);
+
+			var disassembled_str = "";
+			disassemble(data, parsed_hex_loc, function(str) { 
+				disassembled_str += (str + "\n")
+			});
+
+			mirror.setOption("firstLineNumber", parsed_hex_loc);
+			mirror.setValue(disassembled_str);
+		};
+
+		function run() {
+			var pc = document.getElementById("pc_field").value;
+			var pc_num = a.read_word(0xFFFC);
+
+			if (pc.length > 0) {
+				pc_num = parseInt(pc, 16);
+
+				if (isNaN(pc_num)) {
+					throw new Error(pc + " is not a valid program counter.");
+				}
+			}
+
+			a.PC = pc_num;
+			a.run_loop();
+		};
+
+		function stop() {
+			a.stopRunning();
+			var pc_field = document.getElementById("pc_field");
+			pc_field.value = "0x" + formatHex(a.PC);
+		};
+
+	</script>
+</head>
+
+<body>
+	<div id="main">
+		<canvas id="screen"></canvas>
+		<div id="control">
+			<label for="hex">Data</label>
+			<textarea name="hex" id="hex_field"></textarea><br/>
+			<label for="location">Start Address</label>
+			<input type="text" name="location" id="start_field" value="0xC000"></input><br/>
+			<label for="pc">Program Counter (Leave blank for reset vector) </label>
+			<input type="text" name="pc" id="pc_field" value=""></input></br>
+			<br/>
+			<input type="submit" value="Load" onclick="load()"></input>
+			<input type="submit" value="Run" onclick="run()"></input>
+			<input type="submit" value="Stop" onclick="stop()"></input>
+		</div>
+	</div>
+	<div id="editor_div">
+	</div>
+</body>
+</html>

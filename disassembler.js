@@ -31,13 +31,13 @@ function disassemble (data, offset, print_func) {
   	var opcode = OPS[hex[i]];
 
   	if (typeof opcode === "undefined") {
-  		print_func(formatHex(i+offset) + ": #" + formatHex(hex[i], 2));
+  		print_func("#" + formatHex(hex[i], 2));
   		i += 1;
     } else {
 	  	var bytes = opcode.bytes;
 	  	var args = hex.slice(i+1, i+1+bytes);
 
-	  	print_func(formatHex(i+offset) + ": " + opcode.toString.call(opcode, args));  	
+	  	print_func(opcode.toString.call(opcode, args));  	
 
 	  	i += bytes
 	  }

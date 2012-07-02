@@ -124,7 +124,7 @@
 			mirror.setValue(disassembled_str);
 		};
 
-		function run() {
+		function run(run_in_loop) {
 			var pc = document.getElementById("pc_field").value;
 			var pc_num = a.read_word(0xFFFC);
 
@@ -137,16 +137,30 @@
 			}
 
 			a.PC = pc_num;
-			a.run_loop();
+
+			if (run_in_loop == true) {
+				a.run_loop();
+			} else {
+				highlight_line();
+				a.run_step();
+				highlight_line();
+			}
+
 		};
 
 		function stop() {
 			a.stopRunning();
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.PC);
+		};
 
+		function highlight_line() {
 			var line = a.PC - parseInt(document.getElementById("start_field").value, 16);
 			mirror.setLineClass(line, "", "highlighted");
+		};
+
+		function run_step() {
+			run(false);
 		};
 
 	</script>
@@ -163,9 +177,10 @@
 			<label for="pc">Program Counter (Leave blank for reset vector) </label>
 			<input type="text" name="pc" id="pc_field" value=""></input></br>
 			<br/>
-			<input type="submit" value="Load" onclick="load()"></input>
-			<input type="submit" value="Run" onclick="run()"></input>
-			<input type="submit" value="Stop" onclick="stop()"></input>
+			<input type="submit" value="Load" onclick="load();"></input>
+			<input type="submit" value="Run" onclick="run(true);"></input>
+			<input type="submit" value="Stop" onclick="stop();"></input>
+			<input type="submit" value="Step" onclick="run_step();"></input>
 		</div>
 	</div>
 	<div id="editor_div">

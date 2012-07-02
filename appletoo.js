@@ -228,6 +228,15 @@ AppleToo.prototype.run6502 = function(program, pc) {
   this.run_loop();
 };
 
+AppleToo.prototype.run_step = function() {
+  this.running = true;
+
+  this.run(this._read_memory(this.PC++));
+  this.draw();
+
+  this.running = false;
+}
+
 AppleToo.prototype.run_loop = function() {
   this.running = true;
 

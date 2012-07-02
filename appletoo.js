@@ -355,6 +355,20 @@ AppleToo.prototype.print_registers = function() {
   console.log("--------------");
 };
 
+AppleToo.prototype.stack = function() {
+  var stack_top = 0x01FF;
+  var mem = [];
+
+  for (var i = 0x0100 + this.SP + 1; i <= stack_top; i++) {
+    mem.push({
+                address : i,
+                word : parseInt(this.read_memory(i), 16)
+              });
+  }
+
+  return mem;
+}
+
 AppleToo.prototype.initialize_memory = function() {
   for (var i=0; i<65536; i++) {
     this.memory[i] = 0;

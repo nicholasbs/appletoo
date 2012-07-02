@@ -8,8 +8,8 @@
 	<script src="disassembler.js"></script>
 
 	<link rel="stylesheet" href="CodeMirror-2.3/lib/codemirror.css">
-	<script src="CodeMirror-2.3/lib/codemirror.js"></script>
-	<script src="CodeMirror-2.3/mode/javascript/javascript.js"></script>
+	<script src="CodeMirror/lib/codemirror.js"></script>
+	<script src="CodeMirror/mode/javascript/javascript.js"></script>
 
 	<style type="text/css" media="screen">
 		canvas {
@@ -51,12 +51,17 @@
 			margin-bottom: 5px;
 		}
 
+		.CodeMirror-Lines pre.highlighted {
+			background-color: yellow;
+		}
+
 		.CodeMirror-scroll {
 			height: 578;
 			overflow-y: hidden;
 			overflow-x: hidden;
 		}
 	</style>
+
 	<script type="text/javascript" charset="utf-8">
 		window.onload = function() {
 			var appleScreen = document.getElementById("screen");
@@ -139,6 +144,9 @@
 			a.stopRunning();
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.PC);
+
+			var line = a.PC - parseInt(document.getElementById("start_field").value, 16);
+			mirror.setLineClass(line, "", "highlighted");
 		};
 
 	</script>

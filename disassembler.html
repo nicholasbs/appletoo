@@ -105,7 +105,27 @@
 				lineNumbers: true,
 				readOnly: true
 			});
+
+			getRunButton().disabled = true;
+			getStopButton().disabled = true;
+			getStepButton().disabled = true;
 		};
+
+		function getLoadButton() {
+			return document.getElementById("load_button");
+		}
+
+		function getStepButton() {
+			return document.getElementById("step_button");
+		}
+
+		function getRunButton() {
+			return document.getElementById("run_button");
+		}
+
+		function getStopButton() {
+			return document.getElementById("stop_button");
+		}
 
 		function load() {
 			var data = document.getElementById("hex_field").value;
@@ -122,6 +142,10 @@
 
 			mirror.setOption("firstLineNumber", parsed_hex_loc);
 			mirror.setValue(disassembled_str);
+
+			getRunButton().disabled = false;
+			getStepButton().disabled = false;
+			getStopButton().disabled = true;
 		};
 
 		function run(run_in_loop) {
@@ -140,11 +164,22 @@
 
 			if (run_in_loop == true) {
 				a.run_loop();
+
+				getRunButton().disabled = true;
+				getStepButton().disabled = true;
+				getStopButton().disabled = false;
+				getLoadButton().disabled = true;
+
 			} else {
 				highlight_line();
 				a.run_step();
 				highlight_line();
+
+				getRunButton().disabled = false;
+				getStopButton().disabled = true;
+				getLoadButton().disabled = false;
 			}
+
 
 		};
 
@@ -152,6 +187,11 @@
 			a.stopRunning();
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.PC);
+
+			getLoadButton().disabled = false;
+			getRunButton().disabled = false;
+			getStepButton().disabled = false;
+			getStopButton().disabled = true;
 		};
 
 		highlighted_line = undefined;
@@ -190,13 +230,13 @@
 			<label for="pc">Program Counter (Leave blank for reset vector) </label>
 			<input type="text" name="pc" id="pc_field" value=""></input></br>
 			<br/>
-			<input type="submit" value="Load" onclick="load();"></input>
-			<input type="submit" value="Run" onclick="run(true);"></input>
-			<input type="submit" value="Stop" onclick="stop();"></input>
+			<input type="submit" value="Load" onclick="load();" id="load_button"></input>
+			<input type="submit" value="Run" onclick="run(true);" id="run_button"></input>
+			<input type="submit" value="Stop" onclick="stop();" id="stop_button"></input>
 		</div>
 	</div>
 	<div id="editor_div">
-		<input type="submit" value="Step" onclick="run_step();"></input>
+		<input type="submit" value="Step" onclick="run_step();" id="step_button"></input>
 		<br/>
 	</div>
 </body>

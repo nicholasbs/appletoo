@@ -2,7 +2,7 @@
 
 Disassemble a string of hex values into the corresponding opcodes. 
 Parameters:
-- data: A string containing hex values, separated by spaces - ie "AB, BC, 12, 34"
+- data: A string containing hex values, separated by spaces - ie "AB BC 12 34"
 - offset: Number of bytes to offset the printed index.
 - print_func: A function to call for each printed line. By default, this is console.log(str)
 

@@ -38,8 +38,14 @@ function disassemble (data, offset, print_func) {
 	  	var args = hex.slice(i+1, i+1+bytes);
 
 	  	print_func(opcode.toString.call(opcode, args));  	
+	  	
+	  	//Print out the arguments at their correct lines,
+	  	//but make sure not to format them as opcodes
+	  	for (var x = i+1; x < i + bytes; x++) {
+	  		print_func("[#" + formatHex(hex[x], 2) + "]");
+	  	}
 
-	  	i += bytes
+	  	i += bytes;
 	  }
   }
 

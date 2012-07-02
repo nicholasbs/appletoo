@@ -56,7 +56,7 @@
 		}
 
 		.CodeMirror-scroll {
-			height: 578;
+			height: 95%;
 			overflow-y: hidden;
 			overflow-x: hidden;
 		}
@@ -154,9 +154,22 @@
 			pc_field.value = "0x" + formatHex(a.PC);
 		};
 
+		highlighted_line = undefined;
+
 		function highlight_line() {
-			var line = a.PC - parseInt(document.getElementById("start_field").value, 16);
-			mirror.setLineClass(line, "", "highlighted");
+
+			if (typeof highlighted_line != "undefined") {
+				mirror.setLineClass(highlighted_line, "", "");
+			}
+
+			highlighted_line = a.PC - parseInt(document.getElementById("start_field").value, 16);
+			var coords = mirror.charCoords({ line: highlighted_line, ch: 0 }, "local");
+			
+			mirror.setLineClass(highlighted_line, "", "highlighted", "");
+			mirror.scrollTo(0, coords.y);
+
+			var pc_field = document.getElementById("pc_field");
+			pc_field.value = "0x" + formatHex(a.PC);
 		};
 
 		function run_step() {
@@ -180,10 +193,11 @@
 			<input type="submit" value="Load" onclick="load();"></input>
 			<input type="submit" value="Run" onclick="run(true);"></input>
 			<input type="submit" value="Stop" onclick="stop();"></input>
-			<input type="submit" value="Step" onclick="run_step();"></input>
 		</div>
 	</div>
 	<div id="editor_div">
+		<input type="submit" value="Step" onclick="run_step();"></input>
+		<br/>
 	</div>
 </body>
 </html>

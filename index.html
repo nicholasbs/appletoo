@@ -80,8 +80,10 @@
 		};
 
 		function run() {
+			var RESET_VECTOR = 0xFFFC;
+			var pc_num = a.read_word(RESET_VECTOR);
+			
 			var pc = document.getElementById("pc_field").value;
-			var pc_num = a.read_word(0xFFFC);
 
 			if (pc.length > 0) {
 				pc_num = parseInt(pc, 16);

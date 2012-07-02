@@ -39,7 +39,7 @@ function disassemble (data, offset, print_func) {
 
 	  	print_func(opcode.toString.call(opcode, args));  	
 
-	  	i += bytes
+	  	i += bytes;
 	  }
   }
 

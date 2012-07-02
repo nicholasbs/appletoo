@@ -46,7 +46,7 @@
 			background-color: #EEEEEE;
 		}
 		#control_div {
-			height: 20%;
+			height: 15%;
 		}
 		#registers {
 			border-collapse: collapse;
@@ -66,7 +66,7 @@
 		}
 
 		.CodeMirror-scroll {
-			height: 80%;
+			height: 85%;
 			overflow-y: hidden;
 			overflow-x: hidden;
 		}
@@ -235,26 +235,6 @@
 			document.getElementById("register_pc").firstChild.nodeValue = "0x" + formatHex(a.PC);
 		}
 
-		/*function update_registers() {
-			var register_div = document.getElementById("registers");
-			while (register_div.firstChild) {
-				register_div.removeChild(register_div.firstChild);
-			}
-
-			var str =  "AC: "
-							+ " XR: 0x" + formatHex(a.XR)
-							+ " YR: 0x" + formatHex(a.YR)
-							+ " SR: 0x" + formatHex(a.SR)
-							+ " SP: 0x" + formatHex(a.SP)
-							+ " PC: 0x" + formatHex(a.PC);
-
-			register_div.appendChild(document.createTextNode("AC: 0x" + formatHex(a.AC)));
-			register_div.appendChild(document.createElement("br"));
-			register_div.appendChild(document.createTextNode("AC: 0x" + formatHex(a.AC)));
-			register_div.appendChild(document.createElement("br"));
-
-		}*/
-
 		function run_step() {
 			run(false);
 		};
@@ -281,7 +261,6 @@
 	<div id="editor_div">
 		<div id="control_div">
 			<input type="submit" value="Step" onclick="run_step();" id="step_button"></input>
-			<br/>
 			<table id="registers">
 				<tr>
 					<td>AC:</td>

@@ -45,6 +45,16 @@
 		#start_field {
 			background-color: #EEEEEE;
 		}
+		#control_div {
+			height: 20%;
+		}
+		#registers {
+			border-collapse: collapse;
+		}
+		#registers td {
+			border: 1px solid black;
+		}
+
 		label {
 			display: block;
 			margin-top: 5px;
@@ -56,7 +66,7 @@
 		}
 
 		.CodeMirror-scroll {
-			height: 95%;
+			height: 80%;
 			overflow-y: hidden;
 			overflow-x: hidden;
 		}
@@ -103,7 +113,8 @@
 			}, 
 			{
 				lineNumbers: true,
-				readOnly: true
+				readOnly: true,
+				lineNumberFormatter: formatHex
 			});
 
 			getRunButton().disabled = true;
@@ -175,6 +186,8 @@
 				a.run_step();
 				highlight_line();
 
+				update_registers();
+
 				getRunButton().disabled = false;
 				getStopButton().disabled = true;
 				getLoadButton().disabled = false;
@@ -212,6 +225,36 @@
 			pc_field.value = "0x" + formatHex(a.PC);
 		};
 
+		function update_registers() {
+			document.getElementById("register_ac").firstChild.nodeValue = "0x" + formatHex(a.AC);
+			document.getElementById("register_xr").firstChild.nodeValue = "0x" + formatHex(a.XR);
+			document.getElementById("register_yr").firstChild.nodeValue = "0x" + formatHex(a.YR);
+
+			document.getElementById("register_sr").firstChild.nodeValue = "0x" + formatHex(a.SR);
+			document.getElementById("register_sp").firstChild.nodeValue = "0x" + formatHex(a.SP);
+			document.getElementById("register_pc").firstChild.nodeValue = "0x" + formatHex(a.PC);
+		}
+
+		/*function update_registers() {
+			var register_div = document.getElementById("registers");
+			while (register_div.firstChild) {
+				register_div.removeChild(register_div.firstChild);
+			}
+
+			var str =  "AC: "
+							+ " XR: 0x" + formatHex(a.XR)
+							+ " YR: 0x" + formatHex(a.YR)
+							+ " SR: 0x" + formatHex(a.SR)
+							+ " SP: 0x" + formatHex(a.SP)
+							+ " PC: 0x" + formatHex(a.PC);
+
+			register_div.appendChild(document.createTextNode("AC: 0x" + formatHex(a.AC)));
+			register_div.appendChild(document.createElement("br"));
+			register_div.appendChild(document.createTextNode("AC: 0x" + formatHex(a.AC)));
+			register_div.appendChild(document.createElement("br"));
+
+		}*/
+
 		function run_step() {
 			run(false);
 		};
@@ -236,8 +279,28 @@
 		</div>
 	</div>
 	<div id="editor_div">
-		<input type="submit" value="Step" onclick="run_step();" id="step_button"></input>
-		<br/>
+		<div id="control_div">
+			<input type="submit" value="Step" onclick="run_step();" id="step_button"></input>
+			<br/>
+			<table id="registers">
+				<tr>
+					<td>AC:</td>
+					<td id="register_ac">0x00</td>
+					<td>XR:</td>
+					<td id="register_xr">0x00</td>
+					<td>YR:</td>
+					<td id="register_yr">0x00</td>
+				</tr>
+				<tr>
+					<td>SR:</td>
+					<td id="register_sr">0x00</td>
+					<td>SP:</td>
+					<td id="register_sp">0x00</td>
+					<td>PC:</td>
+					<td id="register_pc">0x00</td>
+				</tr>
+			</table>
+		</div>
 	</div>
 </body>
 </html>

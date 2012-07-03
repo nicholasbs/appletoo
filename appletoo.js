@@ -23,13 +23,10 @@ var AppleToo = function(options) {
 
   this.cycles = 0;
 
-  //Used for visualization
-  this.memory_map_writes = [];
-
   this.initialize_memory();
   
   this.cpu = new CPU6502(this.memory);
-  this.cpu.set_memory_callbacks(this, [this.update_soft_switch, this.update_memory_map]);
+  this.cpu.add_memory_callback(this, this.update_soft_switch);
   this.cpu.COMPATIBILITY_MODE = options.compatibility;
 };
 
@@ -43,13 +40,6 @@ AppleToo.prototype.load_memory = function(addr, data) {
   for (var i = 0; i < data.length; i += 2) {
     this.memory[addr + i/2] = parseInt(data.substr(i, 2), 16);
   }
-};
-
-AppleToo.prototype.update_memory_map = function(addr, val) {
-  if (typeof val === "undefined")
-    return;
-
-  this.memory_map_writes[addr] += 1;
 };
 
 var default_options = {
@@ -246,7 +236,6 @@ AppleToo.prototype.stack = function() {
 AppleToo.prototype.initialize_memory = function() {
   for (var i=0; i<65536; i++) {
     this.memory[i] = 0;
-    this.memory_map_writes[i] = 0;
   }
 };
 

@@ -36,7 +36,6 @@ var CPU6502 = function(memory, compatibility) {
 
 	//Used for soft switches
 	this.memory_callbacks = [];
-	this.memory_caller = null;
 
   this.opcodes = {
 	  0xA0 : function() { this.ldy(this.immediate()); this.cycles += 2; },
@@ -193,19 +192,6 @@ var CPU6502 = function(memory, compatibility) {
 	};
 };
 
-//This is used so that the actual device can perform actions
-//when a particular location is read or written to.
-//Can be passed either a single callback or an array of callbacks
-CPU6502.prototype.set_memory_callbacks = function(caller, callback) {
-	this.memory_caller = caller;
-
-	if (typeof callback === "function") {
-		this.memory_callbacks = [callback];
-	} else if (typeof callback === "object") {
-		this.memory_callbacks = callback;
-	}
-}
-
 CPU6502.prototype.run = function(opcode) {
 	var op = this.opcodes[opcode];
   if (typeof op === "undefined") {
@@ -286,11 +272,17 @@ CPU6502.prototype.indirect_indexed_y = function() {
   return (high << 8) + low;
 };
 
+//This can be used for soft switches, memory visualization, etc.
+//Called on both read and writes.
+CPU6502.prototype.add_memory_callback = function(caller, callback) {
+	this.memory_callbacks.push( {caller: caller, callback: callback} )
+}
+
 CPU6502.prototype.call_all_memory_callbacks = function(location, value) {
 	var result = undefined;
 	for (var i = 0; i < this.memory_callbacks.length; i++) {
-		var func = this.memory_callbacks[i];
-		result = func.call(this.memory_caller, location, value);
+		var obj = this.memory_callbacks[i];
+		result = obj.callback.call(obj.caller, location, value);
 	}
 	return result;
 }

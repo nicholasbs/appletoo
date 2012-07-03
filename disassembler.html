@@ -3,10 +3,14 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 
 	<title>AppleToo.js</title>
-  <!-- script src="otrail.js"></script -->
 	<script src="appletoo.js"></script>
 	<script src="disk2.js"></script>
 	<script src="disassembler.js"></script>
+
+	<link rel="stylesheet" href="CodeMirror2/lib/codemirror.css">
+	<script src="CodeMirror2/lib/codemirror.js"></script>
+	<script src="CodeMirror2/mode/javascript/javascript.js"></script>
+
 	<style type="text/css" media="screen">
 		canvas {
 			border: 1px solid #DDD;
@@ -23,6 +27,16 @@
 			padding: 10px;
 			color: #EEEEEE;
 		}
+		#main {
+			float: left;
+		}
+		#editor_div {
+			float: left;
+			width: 350;
+			height: 578;
+			margin-left:20px;
+			background-color: #EEEEEE;
+		}
 		#hex_field {
 			width: 820px;
 			height: 100px;
@@ -36,9 +50,20 @@
 			margin-top: 5px;
 			margin-bottom: 5px;
 		}
+
+		.CodeMirror-Lines pre.highlighted {
+			background-color: yellow;
+		}
+
+		.CodeMirror-scroll {
+			height: 578;
+			overflow-y: hidden;
+			overflow-x: hidden;
+		}
 	</style>
+
 	<script type="text/javascript" charset="utf-8">
-		window.onload = function(){
+		window.onload = function() {
 			var appleScreen = document.getElementById("screen");
 			a = new AppleToo({compatibility: false});
 			appleScreen.width = a.char_w * 40;
@@ -70,20 +95,38 @@
 
 			window.d = new DiskII(a);
 			a.setPeripheral(d, 1);
+
+			var editor_div = document.getElementById("editor_div");
+			
+			mirror = CodeMirror(function (elt) {
+				editor_div.appendChild(elt);
+			}, 
+			{
+				lineNumbers: true,
+				readOnly: true
+			});
 		};
 
 		function load() {
 			var data = document.getElementById("hex_field").value;
 			var hex_location = document.getElementById("start_field").value;
 
-			a.load_memory(parseInt(hex_location, 16), data);
+			var parsed_hex_loc = parseInt(hex_location, 16);
+
+			a.load_memory(parsed_hex_loc, data);
+
+			var disassembled_str = "";
+			disassemble(data, parsed_hex_loc, function(str) { 
+				disassembled_str += (str + "\n")
+			});
+
+			mirror.setOption("firstLineNumber", parsed_hex_loc);
+			mirror.setValue(disassembled_str);
 		};
 
 		function run() {
-			var RESET_VECTOR = 0xFFFC;
-			var pc_num = a.read_word(RESET_VECTOR);
-			
 			var pc = document.getElementById("pc_field").value;
+			var pc_num = a.read_word(0xFFFC);
 
 			if (pc.length > 0) {
 				pc_num = parseInt(pc, 16);
@@ -101,24 +144,31 @@
 			a.stopRunning();
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.PC);
+
+			var line = a.PC - parseInt(document.getElementById("start_field").value, 16);
+			mirror.setLineClass(line, "", "highlighted");
 		};
 
 	</script>
 </head>
 
 <body>
-	<canvas id="screen"></canvas>
-	<div id="control">
-		<label for="hex">Data</label>
-		<textarea name="hex" id="hex_field"></textarea><br/>
-		<label for="location">Start Address</label>
-		<input type="text" name="location" id="start_field" value="0xC000"></input><br/>
-		<label for="pc">Program Counter (Leave blank for reset vector) </label>
-		<input type="text" name="pc" id="pc_field" value=""></input></br>
-		<br/>
-		<input type="submit" value="Load" onclick="load()"></input>
-		<input type="submit" value="Run" onclick="run()"></input>
-		<input type="submit" value="Stop" onclick="stop()"></input>
+	<div id="main">
+		<canvas id="screen"></canvas>
+		<div id="control">
+			<label for="hex">Data</label>
+			<textarea name="hex" id="hex_field"></textarea><br/>
+			<label for="location">Start Address</label>
+			<input type="text" name="location" id="start_field" value="0xC000"></input><br/>
+			<label for="pc">Program Counter (Leave blank for reset vector) </label>
+			<input type="text" name="pc" id="pc_field" value=""></input></br>
+			<br/>
+			<input type="submit" value="Load" onclick="load()"></input>
+			<input type="submit" value="Run" onclick="run()"></input>
+			<input type="submit" value="Stop" onclick="stop()"></input>
+		</div>
+	</div>
+	<div id="editor_div">
 	</div>
 </body>
 </html>

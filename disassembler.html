@@ -6,6 +6,7 @@
 	<script src="appletoo.js"></script>
 	<script src="disk2.js"></script>
 	<script src="disassembler.js"></script>
+	<script src="CPU6502.js"></script>
 
 	<link rel="stylesheet" href="CodeMirror2/lib/codemirror.css">
 	<script src="CodeMirror2/lib/codemirror.js"></script>
@@ -82,7 +83,7 @@
 			appleScreen.height = a.char_h * 24;
 			document.onkeypress = function(e) {
 				console.log(e);
-				a._write_memory(0xC000, e.charCode + 128);
+				a.write_char_code(e.charCode + 128);
 			};
 			document.onkeydown = function(e) {
 				var value = 0;
@@ -101,7 +102,7 @@
 						break;
 				}
 				if (e.keyCode > 36 && e.keyCode < 41){
-					a._write_memory(0xC000, value + 128);
+					a.write_char_code(value + 128);
 				}
 			};
 
@@ -163,7 +164,7 @@
 
 		function run(run_in_loop) {
 			var pc = document.getElementById("pc_field").value;
-			var pc_num = a.read_word(0xFFFC);
+			var pc_num = a.cpu.read_word(0xFFFC);
 
 			if (pc.length > 0) {
 				pc_num = parseInt(pc, 16);
@@ -173,7 +174,7 @@
 				}
 			}
 
-			a.PC = pc_num;
+			a.cpu.PC = pc_num;
 
 			if (run_in_loop == true) {
 				a.run_loop();
@@ -200,9 +201,9 @@
 		};
 
 		function stop() {
-			a.stopRunning();
+			a.stop();
 			var pc_field = document.getElementById("pc_field");
-			pc_field.value = "0x" + formatHex(a.PC);
+			pc_field.value = "0x" + formatHex(a.cpu.PC);
 
 			getLoadButton().disabled = false;
 			getRunButton().disabled = false;
@@ -218,24 +219,24 @@
 				mirror.setLineClass(highlighted_line, "", "");
 			}
 
-			highlighted_line = a.PC - parseInt(document.getElementById("start_field").value, 16);
+			highlighted_line = a.cpu.PC - parseInt(document.getElementById("start_field").value, 16);
 			var coords = mirror.charCoords({ line: highlighted_line, ch: 0 }, "local");
 			
 			mirror.setLineClass(highlighted_line, "", "highlighted", "");
 			mirror.scrollTo(0, coords.y - 30);
 
 			var pc_field = document.getElementById("pc_field");
-			pc_field.value = "0x" + formatHex(a.PC);
+			pc_field.value = "0x" + formatHex(a.cpu.PC);
 		};
 
 		function display_registers() {
-			document.getElementById("register_ac").firstChild.nodeValue = "0x" + formatHex(a.AC);
-			document.getElementById("register_xr").firstChild.nodeValue = "0x" + formatHex(a.XR);
-			document.getElementById("register_yr").firstChild.nodeValue = "0x" + formatHex(a.YR);
+			document.getElementById("register_ac").firstChild.nodeValue = "0x" + formatHex(a.cpu.AC);
+			document.getElementById("register_xr").firstChild.nodeValue = "0x" + formatHex(a.cpu.XR);
+			document.getElementById("register_yr").firstChild.nodeValue = "0x" + formatHex(a.cpu.YR);
 
-			document.getElementById("register_sr").firstChild.nodeValue = "0x" + formatHex(a.SR);
-			document.getElementById("register_sp").firstChild.nodeValue = "0x" + formatHex(a.SP);
-			document.getElementById("register_pc").firstChild.nodeValue = "0x" + formatHex(a.PC);
+			document.getElementById("register_sr").firstChild.nodeValue = "0x" + formatHex(a.cpu.SR);
+			document.getElementById("register_sp").firstChild.nodeValue = "0x" + formatHex(a.cpu.SP);
+			document.getElementById("register_pc").firstChild.nodeValue = "0x" + formatHex(a.cpu.PC);
 		}
 
 		function run_step() {

@@ -7,6 +7,7 @@ var AppleToo = function(options) {
   // Memory is stored as numbers
   // See: http://jsperf.com/tostring-16-vs-parseint-x-16
   this.memory = [];
+
   // Registers
   this.AC = 0;
   this.XR = 0;
@@ -34,6 +35,9 @@ var AppleToo = function(options) {
   this.running = true;
 
   this.cycles = 0;
+
+  //Used for visualization
+  this.memory_map_writes = [];
 
   this.initialize_memory();
 };
@@ -372,6 +376,7 @@ AppleToo.prototype.stack = function() {
 AppleToo.prototype.initialize_memory = function() {
   for (var i=0; i<65536; i++) {
     this.memory[i] = 0;
+    this.memory_map_writes[i] = 0;
   }
 };
 
@@ -433,11 +438,15 @@ AppleToo.prototype._write_memory = function(loc, val) {
     throw new Error("ERROR: AT 0x"+this.PC.toString(16).toUpperCase()+" Tried to write a negative number ("+val.toString(16).toUpperCase()+"h) to memory (0x"+loc.toString(16).toUpperCase()+")");
   } else if (val <= 255 ) {
     this.memory[loc] = val;
+    this.memory_map_writes[loc] = this.memory_map_writes[loc] + 1;
   } else if (val <= 65535) {
     var high_byte = (val & 0xFF00) >> 8,
         low_byte = val & 0x00FF;
     this.memory[loc] = low_byte;
     this.memory[loc+1] = high_byte;
+
+    this.memory_map_writes[loc] = this.memory_map_writes[loc] + 1;
+    this.memory_map_writes[loc+1] = this.memory_map_writes[loc] + 1;
   } else {
     throw new Error("ERROR: Tried to write more than a word!");
   }

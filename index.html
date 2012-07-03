@@ -80,14 +80,18 @@
 
 		function run() {
 			var pc = document.getElementById("pc_field").value;
-			var pc_num = parseInt(pc, 16);
+			var pc_num = a.read_word(0xFFFC);
 
-			if (isNaN(pc_num)) {
-				throw new Error(pc + " is not a valid program counter.");
-			} else {
-				a.PC = pc_num;
-				a.run_loop();
+			if (pc.length > 0) {
+				pc_num = parseInt(pc, 16);
+
+				if (isNaN(pc_num)) {
+					throw new Error(pc + " is not a valid program counter.");
+				}
 			}
+
+			a.PC = pc_num;
+			a.run_loop();
 		};
 
 		function stop() {
@@ -106,8 +110,8 @@
 		<textarea name="hex" id="hex_field"></textarea><br/>
 		<label for="location">Start Address</label>
 		<input type="text" name="location" id="start_field" value="0xC000"></input><br/>
-		<label for="pc">Program Counter</label>
-		<input type="text" name="pc" id="pc_field" value="0xFFFC"></input></br>
+		<label for="pc">Program Counter (Leave blank for reset vector) </label>
+		<input type="text" name="pc" id="pc_field" value=""></input></br>
 		<br/>
 		<input type="submit" value="Load" onclick="load()"></input>
 		<input type="submit" value="Run" onclick="run()"></input>

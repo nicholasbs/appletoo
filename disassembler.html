@@ -33,7 +33,7 @@
 		#editor_div {
 			float: left;
 			width: 350;
-			height: 578;
+			height: auto;
 			margin-left:20px;
 			background-color: #EEEEEE;
 		}
@@ -45,6 +45,18 @@
 		#start_field {
 			background-color: #EEEEEE;
 		}
+		#control_div {
+			height: auto;
+		}
+		.data_table {
+			border-collapse: collapse;
+			padding: 5px;
+		}
+		.data_table td {
+			padding: 3px;
+			border: 1px solid black;
+		}
+
 		label {
 			display: block;
 			margin-top: 5px;
@@ -56,7 +68,7 @@
 		}
 
 		.CodeMirror-scroll {
-			height: 578;
+			height: 400px;
 			overflow-y: hidden;
 			overflow-x: hidden;
 		}
@@ -96,16 +108,37 @@
 			window.d = new DiskII(a);
 			a.setPeripheral(d, 1);
 
-			var editor_div = document.getElementById("editor_div");
+			var code_div = document.getElementById("code_div");
 			
 			mirror = CodeMirror(function (elt) {
-				editor_div.appendChild(elt);
+				code_div.appendChild(elt);
 			}, 
 			{
 				lineNumbers: true,
-				readOnly: true
+				readOnly: true,
+				lineNumberFormatter: formatHex
 			});
+
+			getRunButton().disabled = true;
+			getStopButton().disabled = true;
+			getStepButton().disabled = true;
 		};
+
+		function getLoadButton() {
+			return document.getElementById("load_button");
+		}
+
+		function getStepButton() {
+			return document.getElementById("step_button");
+		}
+
+		function getRunButton() {
+			return document.getElementById("run_button");
+		}
+
+		function getStopButton() {
+			return document.getElementById("stop_button");
+		}
 
 		function load() {
 			var data = document.getElementById("hex_field").value;
@@ -122,9 +155,13 @@
 
 			mirror.setOption("firstLineNumber", parsed_hex_loc);
 			mirror.setValue(disassembled_str);
+
+			getRunButton().disabled = false;
+			getStepButton().disabled = false;
+			getStopButton().disabled = true;
 		};
 
-		function run() {
+		function run(run_in_loop) {
 			var pc = document.getElementById("pc_field").value;
 			var pc_num = a.read_word(0xFFFC);
 
@@ -137,7 +174,29 @@
 			}
 
 			a.PC = pc_num;
-			a.run_loop();
+
+			if (run_in_loop == true) {
+				a.run_loop();
+
+				getRunButton().disabled = true;
+				getStepButton().disabled = true;
+				getStopButton().disabled = false;
+				getLoadButton().disabled = true;
+
+			} else {
+				highlight_line();
+				a.run_step();
+				highlight_line();
+
+				display_registers();
+				display_stack();
+
+				getRunButton().disabled = false;
+				getStopButton().disabled = true;
+				getLoadButton().disabled = false;
+			}
+
+
 		};
 
 		function stop() {
@@ -145,9 +204,72 @@
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.PC);
 
-			var line = a.PC - parseInt(document.getElementById("start_field").value, 16);
-			mirror.setLineClass(line, "", "highlighted");
+			getLoadButton().disabled = false;
+			getRunButton().disabled = false;
+			getStepButton().disabled = false;
+			getStopButton().disabled = true;
 		};
+
+		highlighted_line = undefined;
+
+		function highlight_line() {
+
+			if (typeof highlighted_line != "undefined") {
+				mirror.setLineClass(highlighted_line, "", "");
+			}
+
+			highlighted_line = a.PC - parseInt(document.getElementById("start_field").value, 16);
+			var coords = mirror.charCoords({ line: highlighted_line, ch: 0 }, "local");
+			
+			mirror.setLineClass(highlighted_line, "", "highlighted", "");
+			mirror.scrollTo(0, coords.y - 30);
+
+			var pc_field = document.getElementById("pc_field");
+			pc_field.value = "0x" + formatHex(a.PC);
+		};
+
+		function display_registers() {
+			document.getElementById("register_ac").firstChild.nodeValue = "0x" + formatHex(a.AC);
+			document.getElementById("register_xr").firstChild.nodeValue = "0x" + formatHex(a.XR);
+			document.getElementById("register_yr").firstChild.nodeValue = "0x" + formatHex(a.YR);
+
+			document.getElementById("register_sr").firstChild.nodeValue = "0x" + formatHex(a.SR);
+			document.getElementById("register_sp").firstChild.nodeValue = "0x" + formatHex(a.SP);
+			document.getElementById("register_pc").firstChild.nodeValue = "0x" + formatHex(a.PC);
+		}
+
+		function run_step() {
+			run(false);
+		};
+
+		function display_stack() {
+			var stack = a.stack();
+			var table = document.getElementById("stack_table");
+
+			while (table.firstChild) {
+				table.removeChild(table.firstChild);
+			}
+
+			var tbody = document.createElement("tbody");
+
+			for (var i = 0; i < stack.length; i++) {
+				var stack_element = stack[i];
+
+				var tr = document.createElement("tr");
+				var addr_cell = document.createElement("td");
+				var data_cell = document.createElement("td");
+
+				addr_cell.appendChild(document.createTextNode("0x" + formatHex(stack_element.address)));
+				data_cell.appendChild(document.createTextNode("0x" + formatHex(stack_element.word)));
+
+				tr.appendChild(addr_cell);
+				tr.appendChild(data_cell);
+
+				tbody.appendChild(tr);
+			}
+
+			table.appendChild(tbody);
+		}
 
 	</script>
 </head>
@@ -163,12 +285,39 @@
 			<label for="pc">Program Counter (Leave blank for reset vector) </label>
 			<input type="text" name="pc" id="pc_field" value=""></input></br>
 			<br/>
-			<input type="submit" value="Load" onclick="load()"></input>
-			<input type="submit" value="Run" onclick="run()"></input>
-			<input type="submit" value="Stop" onclick="stop()"></input>
+			<input type="submit" value="Load" onclick="load();" id="load_button"></input>
+			<input type="submit" value="Run" onclick="run(true);" id="run_button"></input>
+			<input type="submit" value="Stop" onclick="stop();" id="stop_button"></input>
 		</div>
 	</div>
 	<div id="editor_div">
+		<input type="submit" value="Step" onclick="run_step();" id="step_button"></input>
+		<label for="code">Disassembled Code</label>
+		<div id="code_div" name="code"></div>
+		<div id="control_div">
+			<label for="register_table">Registers</label>
+			<table id="registers" class="data_table" name="register_table">
+				<tr>
+					<td>AC:</td>
+					<td id="register_ac">0x00</td>
+					<td>XR:</td>
+					<td id="register_xr">0x00</td>
+					<td>YR:</td>
+					<td id="register_yr">0x00</td>
+				</tr>
+				<tr>
+					<td>SR:</td>
+					<td id="register_sr">0x00</td>
+					<td>SP:</td>
+					<td id="register_sp">0x00</td>
+					<td>PC:</td>
+					<td id="register_pc">0x00</td>
+				</tr>
+			</table>
+			<label for="stack_table">Stack</label>
+			<table id="stack_table" class="data_table" name="stack_table">
+			</table>
+		</div>
 	</div>
 </body>
 </html>

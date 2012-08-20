@@ -9,6 +9,11 @@ including _Spy's Demise_.
 
 ![](https://dl.dropbox.com/u/50246/hosted/spysdemise.png)
 
+## Usage
+
+You'll need ROM files to use AppleToo (you can find ROMs pretty easily with
+a little Googling). 
+
 ## TODO
 
  - Finish disk controller
@@ -27,3 +32,8 @@ including _Spy's Demise_.
   - Nathan Michalov
   - Sidney San Martín
 
+## License
+Copyright (C) 2012 Hacker School
+
+Distributed under the terms of the [GNU General Public License version
+3](http://www.gnu.org/copyleft/gpl.html).

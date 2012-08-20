@@ -3,10 +3,9 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 
 	<title>AppleToo.js</title>
-  <!-- script src="otrail.js"></script -->
 	<script src="appletoo.js"></script>
 	<script src="disk2.js"></script>
-	<script src="disassembler.js"></script>
+	<script src="CPU6502.js"></script>
 	<style type="text/css" media="screen">
 		canvas {
 			border: 1px solid #DDD;
@@ -45,7 +44,7 @@
 			appleScreen.height = a.char_h * 24;
 			document.onkeypress = function(e) {
 				console.log(e);
-				a._write_memory(0xC000, e.charCode + 128);
+				a.write_char_code(e.charCode + 128);
 			};
 			document.onkeydown = function(e) {
 				var value = 0;
@@ -64,7 +63,7 @@
 						break;
 				}
 				if (e.keyCode > 36 && e.keyCode < 41){
-					a._write_memory(0xC000, value + 128);
+					a.write_char_code(value + 128);
 				}
 			};
 
@@ -81,7 +80,7 @@
 
 		function run() {
 			var RESET_VECTOR = 0xFFFC;
-			var pc_num = a.read_word(RESET_VECTOR);
+			var pc_num = a.cpu.read_word(RESET_VECTOR);
 			
 			var pc = document.getElementById("pc_field").value;
 
@@ -93,14 +92,14 @@
 				}
 			}
 
-			a.PC = pc_num;
+			a.cpu.PC = pc_num;
 			a.run_loop();
 		};
 
 		function stop() {
-			a.stopRunning();
+			a.stop();
 			var pc_field = document.getElementById("pc_field");
-			pc_field.value = "0x" + formatHex(a.PC);
+			pc_field.value = "0x" + formatHex(a.cpu.PC);
 		};
 
 	</script>

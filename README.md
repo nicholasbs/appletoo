@@ -49,6 +49,7 @@ npm build
   - Nathan Hoffman
   - Nathan Michalov
   - Sidney San Martín
+  - Raph Levien
 
 ## License
 Copyright (C) 2012 Hacker School

@@ -1,4 +1,4 @@
-#AppleToo
+# AppleToo
 
 **AppleToo** is an Apple II emulator written in JavaScript. It currently
 supports all 151 opcodes for the original 6502 CPU, high-resolution graphics
@@ -14,6 +14,24 @@ including _Spy's Demise_.
 You'll need ROM files to use AppleToo (you can find ROMs pretty easily with
 a little Googling). 
 
+### Your own machine code
+
+Here's a minimal program, that just paints some dots in [hi-res
+graphics](https://www.xtof.info/blog/?p=768).
+Paste `a9558d3c22` into the Data field, `c000` into program counter, and
+then Run.
+
+### Disassembler
+
+You’ll need [CodeMirror](https://codemirror.net/) to use the disassembler.
+
+```
+git clone https://github.com/codemirror/CodeMirror.git
+cd CodeMirror
+npm build
+```
+
+
 ## TODO
 
  - Finish disk controller
@@ -21,7 +39,7 @@ a little Googling).
  - Implement other graphics and text modes (low-res, mixed, etc)
  - 65C02 opcodes
 
-##Contributors
+## Contributors
 
   - Nicholas Bergson-Shilcock
   - Steve Ciraolo
@@ -31,6 +49,7 @@ a little Googling).
   - Nathan Hoffman
   - Nathan Michalov
   - Sidney San Martín
+  - Raph Levien
 
 ## License
 Copyright (C) 2012 Hacker School

@@ -17,6 +17,7 @@ var appleToo,
     dec_carry_flag = clone(unset_flags),
     carry_neg_flag = clone(unset_flags),
     carry_zero_flag = clone(unset_flags);
+    overflow_carry_zero_flag = clone(unset_flags);
 
 zero_flag["Z"] = 1;
 neg_flag["N"] = 1;
@@ -32,6 +33,9 @@ carry_neg_flag["C"] = 1;
 carry_neg_flag["N"] = 1;
 carry_zero_flag["C"] = 1;
 carry_zero_flag["Z"] = 1;
+overflow_carry_zero_flag["V"] = 1;
+overflow_carry_zero_flag["C"] = 1;
+overflow_carry_zero_flag["Z"] = 1;
 
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -727,7 +731,7 @@ test("STY_A", function() {
 module("Arithmetic", setupTeardown);
 
 test("ADC", function() {
-  expect(12);
+  expect(15);
 
   appleToo.cpu.AC = 0x02;
   appleToo.cpu.write_memory(0xABCD, 0x11);
@@ -786,6 +790,27 @@ test("ADC", function() {
   appleToo.cpu.adc(0xABCD);
 
   deepEqual(appleToo.cpu.get_status_flags(), overflow_neg_flag);
+
+  appleToo.cpu.SR = 0;
+  appleToo.cpu.AC = 0xFF;
+  appleToo.cpu.write_memory(0xABCD, 0x01);
+  appleToo.cpu.adc(0xABCD);
+
+  deepEqual(appleToo.cpu.get_status_flags(), carry_zero_flag);
+
+  appleToo.cpu.SR = 0;
+  appleToo.cpu.AC = 0x90;
+  appleToo.cpu.write_memory(0xABCD, 0x90);
+  appleToo.cpu.adc(0xABCD);
+
+  deepEqual(appleToo.cpu.get_status_flags(), overflow_carry_flag);
+
+  appleToo.cpu.SR = 0;
+  appleToo.cpu.AC = 0x80;
+  appleToo.cpu.write_memory(0xABCD, 0x80);
+  appleToo.cpu.adc(0xABCD);
+
+  deepEqual(appleToo.cpu.get_status_flags(), overflow_carry_zero_flag);
 });
 
 test("SBC", function() {
@@ -1339,13 +1364,19 @@ test("ROL", function() {
 
 module("Compare and Test Bit", setupTeardown);
 test("CMP", function() {
-  expect(2);
+  expect(3);
   appleToo.cpu.AC = 0x05;
   appleToo.cpu.write_memory(0xABCD, 0x01);
 
   appleToo.cpu.compare("AC", 0xABCD);
 
   deepEqual(appleToo.cpu.get_status_flags(), carry_flag, "Carry flag should be set");
+
+  appleToo.cpu.write_memory(0xABCD, 0x05);
+
+  appleToo.cpu.compare("AC", 0xABCD);
+
+  deepEqual(appleToo.cpu.get_status_flags(), carry_zero_flag, "Carry and zero flags should be set");
 
   appleToo.cpu.write_memory(0xABCD, 0x10);
 

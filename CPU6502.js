@@ -244,7 +244,7 @@ CPU6502.prototype.absolute_indexed_with_y = function() {
 };
 CPU6502.prototype.absolute_indirect = function() {
   var addr = this.read_word(this.PC);
-  if (this.COMPATIBILITY_MODE && addr | 0x00FF === 0x00FF){
+  if (this.COMPATIBILITY_MODE && (addr & 0x00FF) === 0x00FF){
     addr = this._read_memory(addr) + (this._read_memory(addr & 0xFF00) << 8);
   } else {
     addr = this.read_word(addr);
@@ -254,9 +254,8 @@ CPU6502.prototype.absolute_indirect = function() {
 };
 CPU6502.prototype.indexed_x_indirect = function() {
   var addr = this._read_memory(this.PC++);
-  if (addr > 0xFF) throw new Error("Zero_Page boundary exceeded");
 
-  addr = (addr + this.XR) % 255;
+  addr = (addr + this.XR) & 0xFF;
   return this.read_word(addr);
 };
 CPU6502.prototype.indirect_indexed_y = function() {
@@ -267,6 +266,7 @@ CPU6502.prototype.indirect_indexed_y = function() {
   if ((low & 0xFF) != low) { // Handle carry from adding YR
     low &= 0xFF;
     high += 1;
+    // TODO: this takes another cycle and generates a read
   }
 
   return (high << 8) + low;
@@ -405,67 +405,97 @@ CPU6502.prototype.sta = function(addr) {
   this._write_memory(addr, this.AC);
 };
 CPU6502.prototype.adc = function(addr) {
-  var val = this._read_memory(addr),
-      result = this.AC + val + (this.SR & this.SR_FLAGS.C);
+  var val = this._read_memory(addr);
 
-  if ((this.AC & this.SR_FLAGS.N) !== (result & this.SR_FLAGS.N)) {
-    this.SR |= this.SR_FLAGS.V; //Set Overflow Flag
-  } else {
-    this.SR &= ~this.SR_FLAGS.V & 0xFF; //Clear Overflow Flag
-  }
-
-  this.update_zero_and_neg_flags(result);
-
+  var sr = this.SR & ~(this.SR_FLAGS.N | this.SR_FLAGS.V |
+    this.SR_FLAGS.Z | this.SR_FLAGS.C);
   if (this.SR & this.SR_FLAGS.D) {
-    result = to_bcd(from_bcd(this.AC) + from_bcd(val) + (this.SR & this.SR_FLAGS.C));
-    if (result > 99) {
-      this.SR |= this.SR_FLAGS.C;
-    } else {
-      this.SR &= ~this.SR_FLAGS.C & 0xFF;
+    var c = this.SR & this.SR_FLAGS.C;
+    var al = (this.AC & 0xf) + (val & 0xf) + c;
+    var ah = (this.AC & 0xf0) + (val & 0xf0);
+    if (al > 9) {
+      al += 6;
+      ah += 0x10;
     }
+    if (((this.AC + val + c) & 0xFF) === 0) {
+      sr |= this.SR_FLAGS.Z;
+    }
+    if (ah & 0x80) {
+      sr |= this.SR_FLAGS.N;
+    }
+    if (~(this.AC ^ val) & (this.AC ^ ah) & 0x80) {
+      sr |= this.SR_FLAGS.V;
+    }
+    if (ah > 0x90) {
+      ah += 0x60;
+    }
+    var sum = ah | (al & 0xf);
   } else {
-    if (result > 0xFF) {
-      this.SR |= this.SR_FLAGS.C;
-      result &= 0xFF;
-    } else {
-      this.SR &= ~this.SR_FLAGS.C & 0xFF;
+    var sum = this.AC + val + (this.SR & this.SR_FLAGS.C);
+    var sr = this.SR & ~(this.SR_FLAGS.N | this.SR_FLAGS.V |
+      this.SR_FLAGS.Z | this.SR_FLAGS.C);
+    if ((sum & 0xFF) === 0) {
+      sr |= this.SR_FLAGS.Z;
+    }
+    if (sum & 0x80) {
+      sr |= this.SR_FLAGS.N;
+    }
+    if (~(this.AC ^ val) & (this.AC ^ sum) & 0x80) {
+      sr |= this.SR_FLAGS.V;
     }
   }
-  this.AC = result;
-};
+  if (sum > 0xFF) {
+    sr |= this.SR_FLAGS.C;
+  }
+  this.AC = sum & 0xFF;
+  this.SR = sr;
+}
 CPU6502.prototype.sbc = function(addr) {
-  var val = this._read_memory(addr),
-      borrow = ~this.SR & this.SR_FLAGS.C,
-      result = this.AC - val - borrow,
-      twos_comp_diff = unsigned_to_signed(this.AC) - unsigned_to_signed(val) - borrow;
+  var val = this._read_memory(addr) ^ 0xff;
 
-  if (twos_comp_diff > 127 || twos_comp_diff < -128) {
-    this.SR |= this.SR_FLAGS.V; // set overflow
-  } else {
-    this.SR &= (~this.SR_FLAGS.V) & 0xFF;
-  }
-
+  var sr = this.SR & ~(this.SR_FLAGS.N | this.SR_FLAGS.V |
+    this.SR_FLAGS.Z | this.SR_FLAGS.C);
   if (this.SR & this.SR_FLAGS.D) {
-    result = to_bcd(from_bcd(this.AC) - from_bcd(val)) - borrow;
-
-    if (result > 99 || result < 0) {
-      this.SR |= this.SR_FLAGS.V; //Set Overflow Flag
-    } else {
-      this.SR &= ~this.SR_FLAGS.V & 0xFF; //Clear Overflow Flag
+    var c = this.SR & this.SR_FLAGS.C;
+    var al = (this.AC & 0xf) + (val & 0xf) + c;
+    var ah = (this.AC & 0xf0) + (val & 0xf0);
+    if (al < 0x10) {
+      al -= 6;
+    }
+    if (((this.AC + val + c) & 0xFF) === 0) {
+      sr |= this.SR_FLAGS.Z;
+    }
+    if (ah & 0x80) {
+      sr |= this.SR_FLAGS.N;
+    }
+    if (~(this.AC ^ val) & (this.AC ^ ah) & 0x80) {
+      sr |= this.SR_FLAGS.V;
+    }
+    if (ah < 0x100) {
+      ah = (ah - 0x60) & 0xff;
+    }
+    var sum = ah | (al & 0xf);
+  } else {
+    var sum = this.AC + val + (this.SR & this.SR_FLAGS.C);
+    var sr = this.SR & ~(this.SR_FLAGS.N | this.SR_FLAGS.V |
+      this.SR_FLAGS.Z | this.SR_FLAGS.C);
+    if ((sum & 0xFF) === 0) {
+      sr |= this.SR_FLAGS.Z;
+    }
+    if (sum & 0x80) {
+      sr |= this.SR_FLAGS.N;
+    }
+    if (~(this.AC ^ val) & (this.AC ^ sum) & 0x80) {
+      sr |= this.SR_FLAGS.V;
     }
   }
-
-  if (borrow) {
-    this.SR |= this.SR_FLAGS.C; // set carry
+  if (sum > 0xFF) {
+    sr |= this.SR_FLAGS.C;
   }
-  // TODO: This works, but I still don't quite get "underflows"
-  if (result < 0) {
-    this.SR &= (~this.SR_FLAGS.C) & 0xFF;
-  }
+  this.AC = sum & 0xFF;
+  this.SR = sr;
+}
 
-  this.update_zero_and_neg_flags(result);
-  this.AC = result & 0xFF;
-};
 /* Only to be used with 8-bit registers (i.e., anything but the PC) */
 CPU6502.prototype.inc_dec_register = function(register, val) {
   this[register] += val;
@@ -575,7 +605,7 @@ CPU6502.prototype.compare = function(register, addr) {
   var val = this._read_memory(addr),
       diff = this[register] - val;
 
-  if (diff > 0) {
+  if (diff >= 0) {
     this.SR |= this.SR_FLAGS.C;
   } else {
     this.SR &= (~this.SR_FLAGS.C) & 0xFF;

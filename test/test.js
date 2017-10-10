@@ -1306,7 +1306,7 @@ test("ASL", function() {
   deepEqual(appleToo.cpu.get_status_flags(), carry_neg_flag, "Carry and Negative flags should be set");
 });
 test("LSR", function() {
-  expect(4);
+  expect(6);
 
   appleToo.cpu.AC = 0xCD; // 0b11001101
 
@@ -1314,6 +1314,12 @@ test("LSR", function() {
 
   equal(appleToo.cpu.AC, 0x66, "Should shift AC right one bit");
   deepEqual(appleToo.cpu.get_status_flags(), carry_flag, "Carry flag should be set");
+
+  appleToo.cpu.AC = 0xCC; // 0b11001100
+  appleToo.cpu.shift("right");
+
+  equal(appleToo.cpu.AC, 0x66, "Should shift AC right one bit");
+  deepEqual(appleToo.cpu.get_status_flags(), unset_flags, "Carry flag should be clear");
 
   appleToo.cpu.SR = 0;
   appleToo.cpu.write_memory(0xABCD, 0xCD);

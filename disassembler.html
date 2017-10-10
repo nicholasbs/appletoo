@@ -246,7 +246,8 @@
 			var coords = mirror.charCoords({ line: highlighted_line, ch: 0 }, "local");
 			
 			mirror.addLineClass(highlighted_line, "background", "highlighted");
-			mirror.scrollTo(0, coords.y - 30);
+            console.log(coords);
+			mirror.scrollTo(0, coords.top - 30);
 
 			var pc_field = document.getElementById("pc_field");
 			pc_field.value = "0x" + formatHex(a.cpu.PC);

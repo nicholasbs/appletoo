@@ -17,6 +17,7 @@ var AppleToo = function(options) {
   this.screen = document.getElementById(options.screen);
   if (this.screen) {
     this.ctx = this.screen.getContext("2d");
+    this.image_data = this.ctx.createImageData(this.pixel_w * 280, this.pixel_h * 192);
   }
   this.display = !!this.screen;
   this.display_page = 0;
@@ -69,18 +70,21 @@ AppleToo.prototype.draw = function() {
       }
     }
   } else {
+    var pixels = this.image_data.data,
+        pixel_stride = this.pixel_w * 280 * 4;
     for (var row = 0; row < 192; row++) { //192 = 24 Char Rows * 8 Pixel Rows
-      var row_data = this.ctx.createImageData(this.pixel_w * 280, 1), // 7 pixels * 40 cols
-          pixels = row_data.data,
-          row_offset = HIGH_RES_ROW_ADDR[this.display_page][row];
+      var dst_offset = row * this.pixel_h * pixel_stride;
+      var row_offset = HIGH_RES_ROW_ADDR[this.display_page][row];
       for (var byte = 0; byte < 40; byte++) {
         var val = this.cpu._read_memory(row_offset + byte);
-        this.byte_to_rgba(val, pixels, byte * 7 * 4 * this.pixel_w); //7 pixels times 4 elements RGBA
+        this.byte_to_rgba(val, pixels, dst_offset + byte * 7 * 4 * this.pixel_w); //7 pixels * 4 bytes RGBA
       }
-      for (var css_pixel_row = 0; css_pixel_row < this.pixel_h; css_pixel_row++) {
-        a.ctx.putImageData(row_data, 0, row * this.pixel_h + css_pixel_row);
+      // duplicate rendered single pixel line to entire height
+      for (var pixel_row = 1; pixel_row < this.pixel_h; pixel_row++) {
+        pixels.copyWithin(dst_offset + pixel_row * pixel_stride, dst_offset, dst_offset + pixel_stride);
       }
     }
+    a.ctx.putImageData(this.image_data, 0, 0);
   }
 };
 
@@ -175,7 +179,7 @@ AppleToo.prototype.update_soft_switch = function(addr, val) {
   }
   switch (addr) {
     case 0xC010: //Clear Keyboard Strobe
-      this.cpu._write_memory(0xC000, 0x00);
+      this.cpu._write_memory(0xC000, 0x7F & this.cpu.memory[0xC000]);
       break;
     case 0xC050: //Graphics
       this.display_mode = "graphics";
@@ -228,6 +232,10 @@ AppleToo.prototype.run_loop = function() {
 AppleToo.prototype.stop = function() {
   this.cpu.stop();
 };
+
+AppleToo.prototype.is_running = function() {
+  return this.cpu.running;
+}
 
 AppleToo.prototype.stack = function() {
   return this.cpu.stack();

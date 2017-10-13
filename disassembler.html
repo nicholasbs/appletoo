@@ -55,7 +55,7 @@
 			padding: 5px;
 		}
 		.data_table td {
-            font-family: menlo, consolas, monospace;
+			font-family: menlo, consolas, monospace;
 			padding: 3px;
 			border: 1px solid black;
 		}
@@ -84,27 +84,38 @@
 			appleScreen.width = a.char_w * 40;
 			appleScreen.height = a.char_h * 24;
 			document.onkeypress = function(e) {
-				console.log(e);
-				a.write_char_code(e.charCode + 128);
+				if (a.is_running() && e.charCode < 0x80) {
+					a.write_char_code(e.charCode + 128);
+					e.preventDefault();
+				}
 			};
 			document.onkeydown = function(e) {
-				var value = 0;
-				switch (e.keyCode) {
-					case 37:
-						value = 8;
-						break;
-					case 38:
-						value = 11;
-						break;
-					case 39:
-						value = 21;
-						break;
-					case 40:
-						value = 10;
-						break;
-				}
-				if (e.keyCode > 36 && e.keyCode < 41){
-					a.write_char_code(value + 128);
+				if (a.is_running()) {
+					var value = 0;
+					switch (e.keyCode) {
+						case 8:
+							value = 0x7f;
+							break;
+						case 27:
+							value = 27;
+							break;
+						case 37:
+							value = 8;
+							break;
+						case 38:
+							value = 11;
+							break;
+						case 39:
+							value = 21;
+							break;
+						case 40:
+							value = 10;
+							break;
+					}
+					if (value != 0){
+						a.write_char_code(value + 128);
+						e.preventDefault();
+					}
 				}
 			};
 

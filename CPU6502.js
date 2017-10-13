@@ -641,9 +641,9 @@ CPU6502.prototype._shift = function(dir, wrap, addr) {
     val = this.AC;
   }
 
+  this.SR &= (~this.SR_FLAGS.C) & 0xFF;
   if (dir.toLowerCase() === "left") {
     new_val = (val << 1) & 0xFF;
-    this.SR &= (~this.SR_FLAGS.C) & 0xFF;
     this.SR |= (val & 128) >> 7; //Get bit 7 (carry)
     if (wrap) new_val |= old_carry;
   } else if (dir.toLowerCase() === "right") {

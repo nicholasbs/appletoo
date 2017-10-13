@@ -242,11 +242,9 @@
 			}
 
 			highlighted_line = a.cpu.PC - parseInt(document.getElementById("start_field").value, 16);
-            console.log(highlighted_line);
 			var coords = mirror.charCoords({ line: highlighted_line, ch: 0 }, "local");
 			
 			mirror.addLineClass(highlighted_line, "background", "highlighted");
-            console.log(coords);
 			mirror.scrollTo(0, coords.top - 30);
 
 			var pc_field = document.getElementById("pc_field");
